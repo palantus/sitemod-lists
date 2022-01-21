@@ -3,6 +3,7 @@ const { Router, Request, Response } = express;
 const route = Router();
 import Entity from "entitystorage";
 import userService from "../../../../services/user.mjs"
+import {validateAccess} from "../../../../services/auth.mjs"
 
 export let convertRefsToLinks = text => {
   return text.replace(/\[\[([a-zA-Z0-9\-]+)\]\]/g, (grp, pageId) => `<a href="/wiki/${pageId}">${Entity.find(`tag:wiki prop:id=${pageId}`)?.title||pageId}</a>`)
@@ -27,18 +28,21 @@ export default (app) => {
   })
 
   route.get('/:id', function (req, res, next) {
+    if(!validateAccess(req, res, {permission: "lists.read"})) return;
     let list = Entity.find(`tag:list id:${req.params.id}`)
     if(!list) { res.sendStatus(404); return; }
     res.json(toObj(list));
   });
 
   route.post('/', function (req, res, next) {
+    if(!validateAccess(req, res, {permission: "lists.edit"})) return;
     let user = userService(res.locals).me()
     let list = new Entity().tag("list").prop("title", req.body.title||"New list").rel(user, "owner")
     res.json({id: list._id, title: list.title});
   });
 
   route.delete('/:id', function (req, res, next) {
+    if(!validateAccess(req, res, {permission: "lists.edit"})) return;
     let list = Entity.find(`tag:list id:${req.params.id}`)
     if(!list) { res.sendStatus(404); return; }
     list.rels.item?.forEach(i => i.delete())
@@ -47,6 +51,7 @@ export default (app) => {
   });
 
   route.patch('/:id', function (req, res, next) {
+    if(!validateAccess(req, res, {permission: "lists.edit"})) return;
     let list = Entity.find(`tag:list id:${req.params.id}`)
     if(!list) { res.sendStatus(404); return; }
     
@@ -57,6 +62,7 @@ export default (app) => {
   });
 
   route.post('/:id/items', function (req, res, next) {
+    if(!validateAccess(req, res, {permission: "lists.edit"})) return;
     let list = Entity.find(`tag:list id:${req.params.id}`)
     if(!list) { res.sendStatus(404); return; }
     let item = new Entity().tag("listitem");
@@ -67,6 +73,7 @@ export default (app) => {
   });
 
   route.post('/:id/deletechecked', function (req, res, next) {
+    if(!validateAccess(req, res, {permission: "lists.edit"})) return;
     let list = Entity.find(`tag:list id:${req.params.id}`)
     if(!list) { res.sendStatus(404); return; }
     list.rels.item?.forEach(i => {
@@ -76,6 +83,7 @@ export default (app) => {
   });
 
   route.patch('/:id/items/:item', function (req, res, next) {
+    if(!validateAccess(req, res, {permission: "lists.edit"})) return;
     let item = Entity.find(`tag:listitem id:${req.params.item}`)
     if(!item) { res.sendStatus(404); return; }
     
@@ -92,6 +100,7 @@ export default (app) => {
   });
   
   route.delete('/:id/items/:item', function (req, res, next) {
+    if(!validateAccess(req, res, {permission: "lists.edit"})) return;
     let item = Entity.find(`tag:listitem id:${req.params.item}`)
     if(!item) { res.sendStatus(404); return; }
     item.delete();
@@ -99,6 +108,7 @@ export default (app) => {
   });
 
   route.get('/', function (req, res, next) {
+    if(!validateAccess(req, res, {permission: "lists.read"})) return;
     let user = userService(res.locals).me()
     let lists = Entity.search(`tag:list owner.id:${user}`)
     res.json(lists.map(list => ({id: list._id, title: list.title})));
