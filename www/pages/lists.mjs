@@ -20,11 +20,15 @@ template.innerHTML = `
         position: relative;
     }
     data-list-component{
-      display: inline;
-      float: left;
+      display: inline-block;
       margin-top: 10px;
       margin-left: 10px;
       max-width: 500px;
+      vertical-align: top;
+    }
+    #lists{
+      display: flex;
+      flex-wrap: wrap;
     }
   </style>  
 
