@@ -1,0 +1,64 @@
+import Entity from "entitystorage"
+import DataType from "../../../models/datatype.mjs"
+
+export default class ListItem extends Entity {
+  initNew({type, text, refType, refValue}) {
+    this.type = type;
+
+    switch(type){
+      case "ref":
+        let type = DataType.lookup(refType)
+        if(!type) throw "Unknown data type for list ref"
+        this.refType = ""+refType;
+        this.refValue = ""+refValue;
+        this.text = text || null;
+        break;
+
+      default:
+        this.text = text || "New item";
+    }
+
+    this.updateHTML()
+
+    this.tag("listitem")
+  }
+
+  updateHTML(){
+    let textHTMLValue = (this.text||"").replace(/\[\[([a-zA-Z0-9\-]+)\]\]/g, (grp, pageId) => `<a href="/wiki/${pageId}">${Entity.find(`tag:wiki prop:id=${pageId}`)?.title||pageId}</a>`)
+                                       .replace(/\[\[(\/[a-zA-Z0-9\-\/\?\&\=]+)\]\]/g, (grp, link) => `<a href="${link}">${link.slice(1).split("/").map(i => i.charAt(0).toUpperCase() + i.slice(1)).join(" ")}</a>`)
+
+    if(this.type == "ref"){
+      let type = DataType.lookup(this.refType)
+      if(!type) return this.textHTML = "UNKNOWN TYPE";
+      let defaultText = type.showId ? `${type.title} ${this.refValue}` : type.title
+      if(type.uiPath)
+        this.textHTML = `<a href="/${type.uiPath}/${this.refValue}">${textHTMLValue || defaultText}</a>`
+      else
+        this.textHTML = textHTMLValue || defaultText
+    } else {
+      this.textHTML = textHTMLValue
+    }
+  }
+
+  static lookup(id) {
+    if(!id) return null;
+    return ListItem.find(`id:"${id}" tag:listitem`)
+  }
+
+  static allFromListRef(list) {
+    if(!list) return [];
+    return ListItem.search(`tag:listitem prop:type=ref prop:refType=list prop:refValue=${list._id}`)
+  }
+
+  static all(){
+    return ListItem.search("tag:listitem")
+  }
+
+  toObj() {
+    return {
+      id: this._id,
+      textHTML: this.textHTML,
+      checked: this.tags.includes("checked")
+    }
+  }
+}

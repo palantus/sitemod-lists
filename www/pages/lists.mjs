@@ -30,14 +30,28 @@ template.innerHTML = `
       display: flex;
       flex-wrap: wrap;
     }
+    #filters{margin-left: 20px; padding-top: 1px; border-left: 1px solid lightgray; padding-left: 5px;}
+    #filters label{user-select: none;}
+    #sublists-container{display: none; margin-top: 20px;}
+    #sublists-container h2{margin-bottom: 0px;}
   </style>  
 
   <action-bar>
       <action-bar-item id="new-btn">New list</action-bar-item>
+      <div id="filters">
+        <input type="checkbox" id="show-all"></input>
+        <label for="show-all">Show all</label>
+      </div>
   </action-bar>
 
   <div id="container">
     <div id="lists">
+    </div>
+
+    <div id="sublists-container">
+      <h2>Sub lists:</h2>
+      <div id="sublists">
+      </div>
     </div>
   </div>
 `;
@@ -56,14 +70,26 @@ class Element extends HTMLElement {
     this.shadowRoot.getElementById("lists").addEventListener("list-deleted", e => {
       this.shadowRoot.querySelector(`data-list-component[listid="${e.detail.listId}"]`)?.remove()
     })
+    this.shadowRoot.getElementById("sublists").addEventListener("list-deleted", e => {
+      this.shadowRoot.querySelector(`data-list-component[listid="${e.detail.listId}"]`)?.remove()
+    })
+    this.shadowRoot.getElementById("show-all").addEventListener("click", this.refreshData)
   }
   async refreshData(){
-    let lists = await api.get("lists")
+    let showAll = this.shadowRoot.getElementById("show-all").checked
+    let lists = await api.get(showAll ? "lists" : "lists/main")
     if(JSON.stringify(this.lists) == JSON.stringify(lists)) return;
     this.lists = lists;
     let view = this.shadowRoot.getElementById("lists");
     view.innerHTML = ""
-    this.lists.forEach(list => this.addListToView(view, list))
+    this.lists.filter(l => !l.subList).forEach(list => this.addListToView(view, list))
+
+    this.shadowRoot.getElementById("sublists-container").style.display = showAll ? "block" : "none"
+    if(showAll){
+      view = this.shadowRoot.getElementById("sublists");
+      view.innerHTML = ""
+      this.lists.filter(l => l.subList).forEach(list => this.addListToView(view, list))
+    }
   }
 
   async addListToView(view, list){

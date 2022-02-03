@@ -13,7 +13,7 @@ template.innerHTML = `
   </style>
 
   <div id="container">
-    <data-list-component id="list" noedit noframe></data-list-component>
+    <data-list-component id="list" noframe backondelete></data-list-component>
   </div>
 `;
 

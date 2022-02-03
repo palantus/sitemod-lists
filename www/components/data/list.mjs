@@ -1,9 +1,11 @@
 let elementName = "data-list-component"
 
-import { confirmDialog } from "../dialog.mjs";
+import { confirmDialog, showDialog, alertDialog} from "../dialog.mjs";
 import { promptDialog } from "../dialog.mjs";
 import api from "/system/api.mjs"
 import { goto } from "/system/core.mjs"
+import "/components/field-edit.mjs"
+import "/components/field-list.mjs"
 
 const template = document.createElement('template');
 template.innerHTML = `
@@ -16,6 +18,7 @@ template.innerHTML = `
       background: rgba(255, 255, 255, 0.9);
       color: black;
     }
+    .hidden{display: none;}
 
     #title{
       font-size: 120%;
@@ -110,9 +113,12 @@ template.innerHTML = `
     .dropdown-heading{
       margin-bottom: 5px;
     }
+    #newitem-text{width: 350px;}
+    #newitem-dialog label{width: 115px;display: inline-block;}
+    #newitem-dialog field-edit{width: 235px;}
   </style>
   <div id="container">
-    <p id="title" title="Doubleclick to change">Untitled</p>
+    <p id="title" title="Doubleclick to change"></p>
     <div id="body">
       
     </div>
@@ -145,6 +151,31 @@ template.innerHTML = `
       </div>
     </div>
   </div>
+
+  <dialog-component title="Add Item" id="newitem-dialog">
+    
+      <label for="newitem-type">Type: </label>
+      <field-edit id="newitem-type" type="select">
+        <option value="item" selected>Item</option>
+        <option value="sub">Sub list</option>
+        <option value="ref">Reference</option>
+      </field-edit>
+
+      <div id="add-item-ref">
+        <label for="newitem-ref-type">Reference type: </label>
+        <field-edit id="newitem-ref-type" type="select" lookup="type"></field-edit>
+        <br>
+        <label for="newitem-ref-value"">Reference: </label>
+        <field-edit id="newitem-ref-value" type="text"></field-edit>
+      </div>
+    
+      <br>
+      <br>
+      
+      <label for="newitem-text"">Text: </label><br>
+      <textarea id="newitem-text" name="text" rows="8" wrap="soft"></textarea>
+
+  </dialog-component>
 `;
 
 class Element extends HTMLElement {
@@ -184,20 +215,64 @@ class Element extends HTMLElement {
         await api.patch(`lists/${this.listId}`, {title: e.target.value})
         this.refreshData()
       })
+
+      this.shadowRoot.getElementById("newitem-type").addEventListener("value-changed", (evt) => {
+        let type = evt.target.getValue()
+        this.shadowRoot.getElementById("add-item-ref").classList.toggle("hidden", type != "ref")
+        //this.shadowRoot.getElementById("newitem-text").classList.toggle("hidden", type != "item")
+      })
+
+      this.shadowRoot.getElementById("newitem-ref-type").addEventListener("value-changed", async(evt) => {
+        let typeName = evt.target.getValue()
+        let type = (await api.get(`system/datatypes`, {cache: true})).find(t => t.id == typeName)
+        this.shadowRoot.getElementById("newitem-ref-value").setAttribute("type", type.api.exhaustiveList ? "select" : "text")
+        this.shadowRoot.getElementById("newitem-ref-value").setAttribute("lookup", typeName)
+        this.shadowRoot.getElementById("newitem-ref-value").setAttribute("value", "")
+      })
+
+      this.shadowRoot.getElementById("newitem-ref-value").addEventListener("value-changed", (evt) => {
+        let value = evt.target.getValue()
+        let valueTitle = evt.target.getValueTitle()
+        this.shadowRoot.getElementById("newitem-text").value = (value != valueTitle ? valueTitle : "") || ""
+      })
     }
   }
 
   async add() {
-    let text = await promptDialog("Enter new item text")
-    if (!text) return;
-    await api.post(`lists/${this.listId}/items`, { text })
-    this.refreshData()
+    let dialog = this.shadowRoot.querySelector("#newitem-dialog")
+
+    this.shadowRoot.getElementById("newitem-type").setValue("item")
+    this.shadowRoot.getElementById("add-item-ref").classList.toggle("hidden", true)
+    this.shadowRoot.getElementById("newitem-text").classList.toggle("hidden", false)
+
+    showDialog(dialog, {
+      show: () => this.shadowRoot.querySelector("#newitem-text").focus(),
+      ok: async (val) => {
+        await api.post(`lists/${this.listId}/items`, val)
+        this.refreshData()
+      },
+      validate: ({type, text, refType, refValue}) => 
+          !text && type == "item" ? "Please fill out text"
+        : (!refType || !refValue) && type == "ref" ? "Please fill out reference info"
+        : true,
+      values: () => {return {
+        type: this.shadowRoot.getElementById("newitem-type").getValue(),
+        text: this.shadowRoot.getElementById("newitem-text").value.replace(/\n/g, ""),
+        refType: this.shadowRoot.getElementById("newitem-ref-type").getValue(),
+        refValue: this.shadowRoot.getElementById("newitem-ref-value").getValue(),
+      }},
+      close: () => {
+        this.shadowRoot.querySelectorAll("input,textarea").forEach(e => e.value = '')
+      }
+    })
   }
 
   async delete() {
     if (!await confirmDialog(`Are you sure that you want to delete the list: ${this.list.title}?`)) return;
     await api.del(`lists/${this.listId}`)
     this.dispatchEvent(new CustomEvent("list-deleted", { bubbles: true, cancelable: false, detail: { listId: this.listId } }));
+    if(this.hasAttribute("backondelete"))
+      window.history.back();
   }
 
   async deleteChecked() {
@@ -235,9 +310,16 @@ class Element extends HTMLElement {
 
   async refreshData() {
     let listId = this.listId = this.getAttribute("listid")
-    if (!listId) return;
+    if(!listId) return;
 
-    this.list = await api.get(`lists/${listId}`)
+    try{
+      this.list = await api.get(`lists/${listId}`)
+    }catch(err){}
+    if (!this.list) {
+      alertDialog("This list doesn't exist").then(() => window.history.back())
+      this.style.display = "none";
+      return;
+    }
 
     if(this.list.color && !this.hasAttribute("noframe")){
       this.shadowRoot.getElementById("container").style.backgroundColor = this.list.color;
@@ -275,7 +357,6 @@ class Element extends HTMLElement {
 
 
   connectedCallback() {
-    this.refreshData();
   }
 
   disconnectedCallback() {
