@@ -3,10 +3,10 @@ import DataType from "../../../models/datatype.mjs"
 
 export default class ListItem extends Entity {
   initNew({type, text, refType, refValue}) {
-    this.type = type;
 
     switch(type){
       case "ref":
+        this.type = "ref";
         let type = DataType.lookup(refType)
         if(!type) throw "Unknown data type for list ref"
         this.refType = ""+refType;
@@ -15,6 +15,7 @@ export default class ListItem extends Entity {
         break;
 
       default:
+        this.type = "item";
         this.text = text || "New item";
     }
 
@@ -59,6 +60,17 @@ export default class ListItem extends Entity {
       id: this._id,
       textHTML: this.textHTML,
       checked: this.tags.includes("checked")
+    }
+  }
+
+  toObjFull() {
+    
+    return {
+      ...this.toObj(),
+      type: this.type,
+      refType: this.refType,
+      refValue: this.refValue,
+      text: this.text
     }
   }
 }

@@ -131,7 +131,6 @@ class Element extends HTMLElement {
       } else {
         comp = document.createElement("data-list-component")
         comp.setAttribute("listid", list.id)
-        console.log("NEW")
       }
       view.appendChild(comp)
     }

@@ -60,7 +60,7 @@ export default (app) => {
       let subList = new List(req.body.text || "New sub-list", res.locals.user, {type: "sub"})
       item = new ListItem({type: "ref", refType: "list", refValue: subList._id, text: subList.title})
     } else {
-      item = new ListItem(req.body)
+      item = new ListItem({type: req.body.type, text: req.body.text, refType: sanitize(req.body.refType), refValue: sanitize(req.body.refValue)})
     }
     
     list.rel(item, "item")
@@ -86,14 +86,28 @@ export default (app) => {
     
     if(req.body.text !== undefined) {
       item.text = req.body.text;
-      item.updateHTML();
     }
     if(req.body.checked !== undefined){
       if(req.body.checked) item.tag("checked"); 
       else item.removeTag("checked");
     }
+    if(req.body.refType !== undefined) item.refType = sanitize(req.body.refType)
+    if(req.body.refValue !== undefined) item.refValue = sanitize(req.body.refValue)
+
+    if(req.body.text !== undefined || req.body.refType !== undefined || req.body.refValue !== undefined){
+      item.updateHTML();
+    }
 
     res.json(item.toObj());
+  });
+
+  route.get('/:id/items/:item', function (req, res, next) {
+    if(!validateAccess(req, res, {permission: "lists.edit"})) return;
+    let list = List.lookup(sanitize(req.params.id))
+    if(!list) { res.sendStatus(404); return; }
+    let item = ListItem.lookup(sanitize(req.params.item))
+    if(!item) { res.sendStatus(404); return; }
+    res.json(item.toObjFull());
   });
   
   route.delete('/:id/items/:item', function (req, res, next) {

@@ -33,7 +33,7 @@ template.innerHTML = `
       /*white-space: nowrap;*/
     }
 
-    .item table{border-collapse: collapse;}
+    .item table{border-collapse: collapse;width: 100%;}
     .item table td:first-child{width: 21px;}
 
     #bottombar{
@@ -87,6 +87,21 @@ template.innerHTML = `
       transform: translateY(0);
       pointer-events: auto;
     }
+
+
+    .right-action-buttons{
+      position: absolute;
+      left: calc(100% + .25rem);
+      top: 0;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(-20px);
+      transition: opacity 150ms ease-in-out, transform 150ms ease-in-out;
+    }
+    .right-action-buttons:hover{
+      opacity: 1
+      pointer-events: auto;
+    }
     
     .information-grid {
       display: grid;
@@ -116,6 +131,12 @@ template.innerHTML = `
     #newitem-text{width: 350px;}
     #newitem-dialog label{width: 115px;display: inline-block;}
     #newitem-dialog field-edit{width: 235px;}
+
+    .itemtextcontainer{position: relative;}
+    .itemtext{width: 100%; display: inline-block;}
+    .itemtextcontainer:focus-within .right-action-buttons{opacity: 1; pointer-events: auto;}
+    .itemtextcontainer:hover .right-action-buttons{opacity: 1; pointer-events: auto;}
+    .right-action-buttons img{cursor: pointer; pointer-events: auto;}
   </style>
   <div id="container">
     <p id="title" title="Doubleclick to change"></p>
@@ -155,12 +176,14 @@ template.innerHTML = `
 
   <dialog-component title="Add Item" id="newitem-dialog">
     
-      <label for="newitem-type">Type: </label>
-      <field-edit id="newitem-type" type="select">
-        <option value="item" selected>Item</option>
-        <option value="sub">Sub list</option>
-        <option value="ref">Reference</option>
-      </field-edit>
+      <div>
+        <label for="newitem-type">Type: </label>
+        <field-edit id="newitem-type" type="select">
+          <option value="item">Item</option>
+          <option value="sub">Sub list</option>
+          <option value="ref">Reference</option>
+        </field-edit>
+      </div>
 
       <div id="add-item-ref">
         <label for="newitem-ref-type">Reference type: </label>
@@ -201,7 +224,7 @@ class Element extends HTMLElement {
     if (this.hasAttribute("noedit")) {
       this.shadowRoot.getElementById("bottombar").style.display = "none"
     } else {
-      this.shadowRoot.getElementById("add").addEventListener("click", this.add)
+      this.shadowRoot.getElementById("add").addEventListener("click", () => this.add())
       this.shadowRoot.getElementById("delete").addEventListener("click", this.delete)
       this.shadowRoot.getElementById("clearchecked").addEventListener("click", this.deleteChecked)
       this.shadowRoot.getElementById("archive").addEventListener("click", this.archiveClicked)
@@ -234,6 +257,7 @@ class Element extends HTMLElement {
       })
 
       this.shadowRoot.getElementById("newitem-ref-value").addEventListener("value-changed", (evt) => {
+        if(this.shadowRoot.getElementById("newitem-text").value) return; //Don't override existing value
         let value = evt.target.getValue()
         let valueTitle = evt.target.getValueTitle()
         this.shadowRoot.getElementById("newitem-text").value = (value != valueTitle ? valueTitle : "") || ""
@@ -241,17 +265,32 @@ class Element extends HTMLElement {
     }
   }
 
-  async add() {
+  async add(item) {
     let dialog = this.shadowRoot.querySelector("#newitem-dialog")
 
-    this.shadowRoot.getElementById("newitem-type").setValue("item")
-    this.shadowRoot.getElementById("add-item-ref").classList.toggle("hidden", true)
-    this.shadowRoot.getElementById("newitem-text").classList.toggle("hidden", false)
+    this.shadowRoot.getElementById("newitem-ref-value").setValue(item?.refValue || "")
+    if(item && item.refType){
+      let type = (await api.get(`system/datatypes`, {cache: true})).find(t => t.id == item.refType)
+      this.shadowRoot.getElementById("newitem-ref-value").setAttribute("type", type?.api.exhaustiveList ? "select" : "text")
+      this.shadowRoot.getElementById("newitem-ref-value").setAttribute("lookup", type?.id)
+      await this.shadowRoot.getElementById("newitem-ref-value").refreshLookups()
+    }
+
+    this.shadowRoot.getElementById("newitem-type").setValue(item?.type || "item")
+    this.shadowRoot.getElementById("newitem-type").parentElement.classList.toggle("hidden", !!item)
+    this.shadowRoot.getElementById("newitem-text").value = item?.text || ""
+    this.shadowRoot.getElementById("newitem-ref-type").setValue(item?.refType || "")
+    this.shadowRoot.getElementById("newitem-ref-value").setValue(item?.refValue || "")
+
+    this.shadowRoot.getElementById("add-item-ref").classList.toggle("hidden", (item?.type || "item") != "ref")
 
     showDialog(dialog, {
       show: () => this.shadowRoot.querySelector("#newitem-text").focus(),
       ok: async (val) => {
-        await api.post(`lists/${this.listId}/items`, val)
+        if(item)
+          await api.patch(`lists/${this.listId}/items/${item.id}`, val)
+        else
+          await api.post(`lists/${this.listId}/items`, val)
         this.refreshData()
         if(val.type == "sub")
           this.dispatchEvent(new CustomEvent("list-added", { bubbles: true, cancelable: false, detail: { listId: this.listId } }));
@@ -306,12 +345,19 @@ class Element extends HTMLElement {
     this.refreshData();
   }
 
-  bodyClick(e) {
+  async bodyClick(e) {
     if (e.target.tagName == "A") {
       let href = e.target.getAttribute("href")
       if (href.startsWith("/")) {
         e.preventDefault();
         goto(href)
+      }
+    } else if(e.target.classList.contains("edit-btn")){
+      let itemId = e.target.closest(".item").getAttribute("data-itemid")
+      let itemBasic = this.list.items.find(i => i.id == itemId)
+      if(itemBasic){
+        let item = await api.get(`lists/${this.listId}/items/${itemBasic.id}`)
+        this.add(item)
       }
     }
   }
@@ -347,7 +393,10 @@ class Element extends HTMLElement {
               <input type="checkbox" ${i.checked ? "checked" : ""} ${this.hasAttribute("noedit") ? "disabled" : ""}></input>
             </td>
             <td>
-              <span>${i.textHTML}</span>
+              <div class="itemtextcontainer">
+                <span class="itemtext" tabindex=0>${i.textHTML}</span>
+                <span class="right-action-buttons"><img class="edit-btn" src="/img/edit.ico" title="Edit"></span>
+              </div>
             </td>
           </tr>
         </table>
