@@ -2,7 +2,7 @@ import Entity from "entitystorage"
 import ListItem from "./listitem.mjs";
 
 export default class List extends Entity {
-  initNew(title, owner, {type}) {
+  initNew(title, owner, {type} = {}) {
     this.title = title || "New list";
 
     this.rel(owner, "owner")

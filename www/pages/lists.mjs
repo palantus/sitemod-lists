@@ -30,14 +30,16 @@ template.innerHTML = `
       display: flex;
       flex-wrap: wrap;
     }
-    #filters{margin-left: 20px; padding-top: 1px; border-left: 1px solid lightgray; padding-left: 5px;}
+    #filters{margin-left: 3px; padding-top: 1px; border-left: 1px solid lightgray; padding-left: 5px;}
     #filters label{user-select: none;}
     div.lists-container{display: none; margin-top: 20px;}
-    div.lists-container h2{margin-bottom: 0px;}
+    div.lists-container h2{margin-bottom: 0px; margin-left: 10px;}
+    #graveyard{display: none;}
   </style>  
 
   <action-bar>
       <action-bar-item id="new-btn">New list</action-bar-item>
+      <action-bar-item id="refresh-btn">Refresh</action-bar-item>
       <div id="filters">
         <input type="checkbox" id="show-all"></input>
         <label for="show-all">Show all</label>
@@ -59,6 +61,8 @@ template.innerHTML = `
       <div id="archive">
       </div>
     </div>
+
+    <div id="graveyard"></div>
   </div>
 `;
 
@@ -73,6 +77,7 @@ class Element extends HTMLElement {
     this.newList = this.newList.bind(this);
     
     this.shadowRoot.getElementById("new-btn").addEventListener("click", this.newList)
+    this.shadowRoot.getElementById("refresh-btn").addEventListener("click", e => this.refreshData(e, true))
     this.shadowRoot.getElementById("lists").addEventListener("list-deleted", this.refreshData)
     this.shadowRoot.getElementById("lists").addEventListener("list-archived", this.refreshData)
     this.shadowRoot.getElementById("lists").addEventListener("list-added", this.refreshData)
@@ -85,28 +90,55 @@ class Element extends HTMLElement {
     this.shadowRoot.getElementById("show-all").addEventListener("click", this.refreshData)
   }
 
-  async refreshData(){
+  async refreshData(e, force){
     let showAll = this.shadowRoot.getElementById("show-all").checked
     let lists = await api.get(showAll ? "lists" : "lists/main")
-    if(JSON.stringify(this.lists) == JSON.stringify(lists)) return;
-    this.lists = lists;
-    let view = this.shadowRoot.getElementById("lists");
-    view.innerHTML = ""
-    this.lists.filter(l => !l.subList && !l.archived).forEach(list => this.addListToView(view, list))
+    if(force !== true && JSON.stringify(this.lists) == JSON.stringify(lists)) return;
+    this.lists = lists
+
+    if(force === true){
+      this.shadowRoot.getElementById("lists").innerHTML = ""
+      this.shadowRoot.getElementById("sublists").innerHTML = ""
+      this.shadowRoot.getElementById("archive").innerHTML = ""
+      this.shadowRoot.getElementById("graveyard").innerHTML = ""
+    }
+
+    if(e?.originalTarget?.id != "show-all"){
+      let view = this.shadowRoot.getElementById("lists");
+      this.setListsInView(view, this.lists.filter(l => !l.subList && !l.archived))
+    }
 
     this.shadowRoot.getElementById("sublists-container").style.display = showAll ? "block" : "none"
     if(showAll){
-      view = this.shadowRoot.getElementById("sublists");
-      view.innerHTML = ""
-      this.lists.filter(l => l.subList && !l.archived).forEach(list => this.addListToView(view, list))
+      let view = this.shadowRoot.getElementById("sublists");
+      this.setListsInView(view, this.lists.filter(l => l.subList && !l.archived))
     }
 
     this.shadowRoot.getElementById("archive-container").style.display = showAll ? "block" : "none"
     if(showAll){
-      view = this.shadowRoot.getElementById("archive");
-      view.innerHTML = ""
-      this.lists.filter(l => l.archived).forEach(list => this.addListToView(view, list))
+      let view = this.shadowRoot.getElementById("archive");
+      this.setListsInView(view, this.lists.filter(l => l.archived))
     }
+  }
+
+  async setListsInView(view, lists){
+    for(let list of lists){
+      let comp = this.shadowRoot.querySelector(`data-list-component[listid="${list.id}"]`)
+      if(comp){
+        if(comp.parentElement !== view){
+          comp.remove();
+        }
+      } else {
+        comp = document.createElement("data-list-component")
+        comp.setAttribute("listid", list.id)
+        console.log("NEW")
+      }
+      view.appendChild(comp)
+    }
+    [...view.querySelectorAll("data-list-component")].filter(e => !lists.find(l => l.id == e.getAttribute("listid"))).forEach(e => {
+      e.remove()
+      this.shadowRoot.getElementById("graveyard").appendChild(e)
+    })
   }
 
   async addListToView(view, list){
@@ -123,13 +155,11 @@ class Element extends HTMLElement {
   }
 
   connectedCallback() {
-    on("changed-project", elementName, this.refreshData)
     on("changed-page", elementName, this.refreshData)
     this.refreshData();
   }
 
   disconnectedCallback() {
-    off("changed-project", elementName)
     off("changed-page", elementName)
   }
 }

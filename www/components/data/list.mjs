@@ -293,8 +293,10 @@ class Element extends HTMLElement {
   }
 
   async archiveClicked(){
-    await api.patch(`lists/${this.listId}`, { archived: !this.list.archived })
+    this.list.archived = !this.list.archived;
+    await api.patch(`lists/${this.listId}`, { archived: this.list.archived })
     this.dispatchEvent(new CustomEvent("list-archived", { bubbles: true, cancelable: false, detail: { listId: this.listId } }));
+    this.refreshView();
   }
 
   async titleChange() {
@@ -351,7 +353,11 @@ class Element extends HTMLElement {
         </table>
       </div>`).join("")
 
-      this.shadowRoot.getElementById("archive").innerText = this.list.archived ? "Restore from archive" : "Archive"
+      this.refreshView();
+  }
+
+  refreshView(){
+    this.shadowRoot.getElementById("archive").innerText = this.list.archived ? "Restore from archive" : "Archive"
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
