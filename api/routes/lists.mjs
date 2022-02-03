@@ -45,6 +45,7 @@ export default (app) => {
     
     if(req.body.title !== undefined) list.title = req.body.title;
     if(req.body.color !== undefined) list.color = req.body.color;
+    if(req.body.archived !== undefined) {if(req.body.archived) list.tag("archived");  else list.removeTag("archived");}
 
     res.json(list.toObj());
   });
@@ -106,6 +107,6 @@ export default (app) => {
   route.get('/', function (req, res, next) {
     if(!validateAccess(req, res, {permission: "lists.read"})) return;
     let lists = List.all(res.locals.user)
-    res.json(lists.map(list => ({id: list._id, title: list.title, subList: list.tags.includes("sublist")})));
+    res.json(lists.map(list => ({id: list._id, title: list.title, subList: list.tags.includes("sublist"), archived: list.tags.includes("archived")})));
   });
 };

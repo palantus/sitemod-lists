@@ -22,7 +22,7 @@ export default class List extends Entity {
   }
 
   static allMain(user){
-    return List.search(`tag:list owner.id:${user} !tag:sublist`)
+    return List.search(`tag:list owner.id:${user} !tag:sublist !tag:archived`)
   }
 
   delete(){
@@ -37,7 +37,8 @@ export default class List extends Entity {
       title: this.title,
       color: this.color||null,
       items: this.rels.item?.map(i => ListItem.from(i).toObj()) || [],
-      subList: this.tags.includes("sublist")
+      subList: this.tags.includes("sublist"),
+      archived: this.tags.includes("archived")
     }
   }
 }

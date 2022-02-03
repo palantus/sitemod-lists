@@ -145,6 +145,7 @@ template.innerHTML = `
               <button id="clearchecked" title="Delete checked items">Remove checked</button>
               <button id="delete" title="Delete list">Delete list</button>
               <button id="share" title="Open shareable link" data-dropdown-button>Share</button>
+              <button id="archive" data-dropdown-button>Archive</button>
             </div>
           </div>
         </div>
@@ -192,6 +193,7 @@ class Element extends HTMLElement {
     this.bodyClick = this.bodyClick.bind(this)
     this.share = this.share.bind(this)
     this.titleChange = this.titleChange.bind(this)
+    this.archiveClicked = this.archiveClicked.bind(this)
 
     if (this.hasAttribute("noframe"))
       this.shadowRoot.getElementById("container").classList.add("noframe")
@@ -202,6 +204,7 @@ class Element extends HTMLElement {
       this.shadowRoot.getElementById("add").addEventListener("click", this.add)
       this.shadowRoot.getElementById("delete").addEventListener("click", this.delete)
       this.shadowRoot.getElementById("clearchecked").addEventListener("click", this.deleteChecked)
+      this.shadowRoot.getElementById("archive").addEventListener("click", this.archiveClicked)
       this.shadowRoot.getElementById("body").addEventListener("change", this.change)
       this.shadowRoot.getElementById("body").addEventListener("click", this.bodyClick)
       this.shadowRoot.getElementById("share").addEventListener("click", this.share)
@@ -250,6 +253,8 @@ class Element extends HTMLElement {
       ok: async (val) => {
         await api.post(`lists/${this.listId}/items`, val)
         this.refreshData()
+        if(val.type == "sub")
+          this.dispatchEvent(new CustomEvent("list-added", { bubbles: true, cancelable: false, detail: { listId: this.listId } }));
       },
       validate: ({type, text, refType, refValue}) => 
           !text && type == "item" ? "Please fill out text"
@@ -285,6 +290,11 @@ class Element extends HTMLElement {
     let itemId = e.target.closest(".item").getAttribute("data-itemid")
 
     await api.patch(`lists/${this.listId}/items/${itemId}`, { checked: e.target.checked })
+  }
+
+  async archiveClicked(){
+    await api.patch(`lists/${this.listId}`, { archived: !this.list.archived })
+    this.dispatchEvent(new CustomEvent("list-archived", { bubbles: true, cancelable: false, detail: { listId: this.listId } }));
   }
 
   async titleChange() {
@@ -341,6 +351,7 @@ class Element extends HTMLElement {
         </table>
       </div>`).join("")
 
+      this.shadowRoot.getElementById("archive").innerText = this.list.archived ? "Restore from archive" : "Archive"
   }
 
   attributeChangedCallback(name, oldValue, newValue) {

@@ -32,8 +32,8 @@ template.innerHTML = `
     }
     #filters{margin-left: 20px; padding-top: 1px; border-left: 1px solid lightgray; padding-left: 5px;}
     #filters label{user-select: none;}
-    #sublists-container{display: none; margin-top: 20px;}
-    #sublists-container h2{margin-bottom: 0px;}
+    div.lists-container{display: none; margin-top: 20px;}
+    div.lists-container h2{margin-bottom: 0px;}
   </style>  
 
   <action-bar>
@@ -48,9 +48,15 @@ template.innerHTML = `
     <div id="lists">
     </div>
 
-    <div id="sublists-container">
+    <div id="sublists-container" class="lists-container">
       <h2>Sub lists:</h2>
       <div id="sublists">
+      </div>
+    </div>
+
+    <div id="archive-container" class="lists-container">
+      <h2>Archive:</h2>
+      <div id="archive">
       </div>
     </div>
   </div>
@@ -67,14 +73,18 @@ class Element extends HTMLElement {
     this.newList = this.newList.bind(this);
     
     this.shadowRoot.getElementById("new-btn").addEventListener("click", this.newList)
-    this.shadowRoot.getElementById("lists").addEventListener("list-deleted", e => {
-      this.shadowRoot.querySelector(`data-list-component[listid="${e.detail.listId}"]`)?.remove()
-    })
-    this.shadowRoot.getElementById("sublists").addEventListener("list-deleted", e => {
-      this.shadowRoot.querySelector(`data-list-component[listid="${e.detail.listId}"]`)?.remove()
-    })
+    this.shadowRoot.getElementById("lists").addEventListener("list-deleted", this.refreshData)
+    this.shadowRoot.getElementById("lists").addEventListener("list-archived", this.refreshData)
+    this.shadowRoot.getElementById("lists").addEventListener("list-added", this.refreshData)
+    this.shadowRoot.getElementById("sublists").addEventListener("list-deleted", this.refreshData)
+    this.shadowRoot.getElementById("sublists").addEventListener("list-archived", this.refreshData)
+    this.shadowRoot.getElementById("sublists").addEventListener("list-added", this.refreshData)
+    this.shadowRoot.getElementById("archive").addEventListener("list-deleted", this.refreshData)
+    this.shadowRoot.getElementById("archive").addEventListener("list-archived", this.refreshData)
+    this.shadowRoot.getElementById("archive").addEventListener("list-added", this.refreshData)
     this.shadowRoot.getElementById("show-all").addEventListener("click", this.refreshData)
   }
+
   async refreshData(){
     let showAll = this.shadowRoot.getElementById("show-all").checked
     let lists = await api.get(showAll ? "lists" : "lists/main")
@@ -82,13 +92,20 @@ class Element extends HTMLElement {
     this.lists = lists;
     let view = this.shadowRoot.getElementById("lists");
     view.innerHTML = ""
-    this.lists.filter(l => !l.subList).forEach(list => this.addListToView(view, list))
+    this.lists.filter(l => !l.subList && !l.archived).forEach(list => this.addListToView(view, list))
 
     this.shadowRoot.getElementById("sublists-container").style.display = showAll ? "block" : "none"
     if(showAll){
       view = this.shadowRoot.getElementById("sublists");
       view.innerHTML = ""
-      this.lists.filter(l => l.subList).forEach(list => this.addListToView(view, list))
+      this.lists.filter(l => l.subList && !l.archived).forEach(list => this.addListToView(view, list))
+    }
+
+    this.shadowRoot.getElementById("archive-container").style.display = showAll ? "block" : "none"
+    if(showAll){
+      view = this.shadowRoot.getElementById("archive");
+      view.innerHTML = ""
+      this.lists.filter(l => l.archived).forEach(list => this.addListToView(view, list))
     }
   }
 
