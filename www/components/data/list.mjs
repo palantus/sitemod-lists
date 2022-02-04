@@ -137,6 +137,12 @@ template.innerHTML = `
     .itemtextcontainer:focus-within .right-action-buttons{opacity: 1; pointer-events: auto;}
     .itemtextcontainer:hover .right-action-buttons{opacity: 1; pointer-events: auto;}
     .right-action-buttons .edit-btn{cursor: pointer; pointer-events: auto; background-image: url("/img/edit.ico"); display: inline-block; width: 15px; height: 15px;background-size: cover;}
+
+    #options-list field-edit{
+      position: relative;
+      top: 5px;
+      width: 140px;
+    }
   </style>
   <div id="container">
     <p id="title" title="Doubleclick to change"></p>
@@ -166,7 +172,16 @@ template.innerHTML = `
               <button id="clearchecked" title="Delete checked items">Remove checked</button>
               <button id="delete" title="Delete list">Delete list</button>
               <button id="share" title="Open shareable link" data-dropdown-button>Share</button>
-              <button id="archive" data-dropdown-button>Archive</button>
+            </div>
+          </div>
+          <div>
+            <div class="dropdown-heading">Options</div>
+            <div class="dropdown-links">
+              <field-list labels-pct="85" id="options-list">
+                <field-edit id="archived" label="Archived" type="checkbox"></field-edit>
+                <field-edit id="subList" label="Sublist" type="checkbox"></field-edit>
+                <field-edit id="keepSorted" label="Keep sorted" type="checkbox"></field-edit>
+              </field-list>
             </div>
           </div>
         </div>
@@ -216,7 +231,7 @@ class Element extends HTMLElement {
     this.bodyClick = this.bodyClick.bind(this)
     this.share = this.share.bind(this)
     this.titleChange = this.titleChange.bind(this)
-    this.archiveClicked = this.archiveClicked.bind(this)
+    this.refreshData = this.refreshData.bind(this)
 
     if (this.hasAttribute("noframe"))
       this.shadowRoot.getElementById("container").classList.add("noframe")
@@ -227,7 +242,6 @@ class Element extends HTMLElement {
       this.shadowRoot.getElementById("add").addEventListener("click", () => this.add())
       this.shadowRoot.getElementById("delete").addEventListener("click", this.delete)
       this.shadowRoot.getElementById("clearchecked").addEventListener("click", this.deleteChecked)
-      this.shadowRoot.getElementById("archive").addEventListener("click", this.archiveClicked)
       this.shadowRoot.getElementById("body").addEventListener("change", this.change)
       this.shadowRoot.getElementById("body").addEventListener("click", this.bodyClick)
       this.shadowRoot.getElementById("share").addEventListener("click", this.share)
@@ -261,6 +275,20 @@ class Element extends HTMLElement {
         let value = evt.target.getValue()
         let valueTitle = evt.target.getValueTitle()
         this.shadowRoot.getElementById("newitem-text").value = (value != valueTitle ? valueTitle : "") || ""
+      })
+
+      this.shadowRoot.getElementById("archived").addEventListener("value-changed", () => {
+        this.list.archived = !!this.shadowRoot.getElementById("archived").getValue()
+        this.dispatchEvent(new CustomEvent("list-archived", { bubbles: true, cancelable: false, detail: { listId: this.listId } }));
+        this.refreshView();
+      })
+
+      this.shadowRoot.getElementById("keepSorted").addEventListener("value-changed", this.refreshData)
+
+      this.shadowRoot.getElementById("subList").addEventListener("value-changed", () => {
+        this.list.subList = !!this.shadowRoot.getElementById("subList").getValue()
+        this.dispatchEvent(new CustomEvent("list-archived", { bubbles: true, cancelable: false, detail: { listId: this.listId } }));
+        this.refreshView();
       })
     }
   }
@@ -331,13 +359,6 @@ class Element extends HTMLElement {
     await api.patch(`lists/${this.listId}/items/${itemId}`, { checked: e.target.checked })
   }
 
-  async archiveClicked(){
-    this.list.archived = !this.list.archived;
-    await api.patch(`lists/${this.listId}`, { archived: this.list.archived })
-    this.dispatchEvent(new CustomEvent("list-archived", { bubbles: true, cancelable: false, detail: { listId: this.listId } }));
-    this.refreshView();
-  }
-
   async titleChange() {
     let title = await promptDialog("Enter new title", this.list.title)
     if (!title) return;
@@ -385,6 +406,10 @@ class Element extends HTMLElement {
     this.shadowRoot.getElementById("title").innerText = this.list.title
     this.shadowRoot.getElementById("title-edit").value = this.list.title
     this.shadowRoot.getElementById("color").value = this.list.color||"#FFFFFF"
+
+    if(this.list.keepSorted)
+      this.list.items = this.list.items.sort((a, b) => a.textHTML?.toLowerCase() < b.textHTML.toLowerCase() ? -1 : 1)
+
     this.shadowRoot.getElementById("body").innerHTML = this.list.items.map(i => `
       <div class="item" data-itemid="${i.id}">
         <table>
@@ -402,11 +427,14 @@ class Element extends HTMLElement {
         </table>
       </div>`).join("")
 
-      this.refreshView();
+    this.refreshView();
+    this.shadowRoot.querySelectorAll("#options-list field-edit").forEach(e => e.setAttribute("patch", `lists/${listId}`))
   }
 
   refreshView(){
-    this.shadowRoot.getElementById("archive").innerText = this.list.archived ? "Restore from archive" : "Archive"
+    this.shadowRoot.getElementById("archived").setAttribute("value", this.list.archived ? true : false)
+    this.shadowRoot.getElementById("subList").setAttribute("value", this.list.subList ? true : false)
+    this.shadowRoot.getElementById("keepSorted").setAttribute("value", this.list.keepSorted ? true : false)
   }
 
   attributeChangedCallback(name, oldValue, newValue) {

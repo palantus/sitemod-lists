@@ -46,6 +46,8 @@ export default (app) => {
     if(req.body.title !== undefined) list.title = req.body.title;
     if(req.body.color !== undefined) list.color = req.body.color;
     if(req.body.archived !== undefined) {if(req.body.archived) list.tag("archived");  else list.removeTag("archived");}
+    if(req.body.keepSorted !== undefined) list.keepSorted = !!req.body.keepSorted;
+    if(req.body.subList !== undefined) {if(req.body.subList) list.tag("sublist");  else list.removeTag("sublist");}
 
     res.json(list.toObj());
   });

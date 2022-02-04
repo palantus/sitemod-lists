@@ -38,7 +38,8 @@ export default class List extends Entity {
       color: this.color||null,
       items: this.rels.item?.map(i => ListItem.from(i).toObj()) || [],
       subList: this.tags.includes("sublist"),
-      archived: this.tags.includes("archived")
+      archived: this.tags.includes("archived"),
+      keepSorted: typeof this.keepSorted === "boolean" ? this.keepSorted : false
     }
   }
 }
