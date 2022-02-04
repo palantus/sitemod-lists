@@ -407,8 +407,12 @@ class Element extends HTMLElement {
     this.shadowRoot.getElementById("title-edit").value = this.list.title
     this.shadowRoot.getElementById("color").value = this.list.color||"#FFFFFF"
 
-    if(this.list.keepSorted)
-      this.list.items = this.list.items.sort((a, b) => a.textHTML?.toLowerCase() < b.textHTML.toLowerCase() ? -1 : 1)
+    if(this.list.keepSorted){
+      for(let l of this.list.items){
+        l.textSortable = (l.textHTML?.replace(/(<([^>]+)>)/ig, '')||"").toLowerCase()
+      }
+      this.list.items = this.list.items.sort((a, b) => a.textSortable < b.textSortable ? -1 : 1)
+    }
 
     this.shadowRoot.getElementById("body").innerHTML = this.list.items.map(i => `
       <div class="item" data-itemid="${i.id}">
