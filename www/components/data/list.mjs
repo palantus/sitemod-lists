@@ -134,6 +134,7 @@ template.innerHTML = `
 
     .itemtextcontainer{position: relative;}
     .itemtext{width: 100%; display: inline-block;}
+    .itemtext a{color: black; text-decoration: none;}
     .itemtextcontainer:focus-within .right-action-buttons{opacity: 1; pointer-events: auto;}
     .itemtextcontainer:hover .right-action-buttons{opacity: 1; pointer-events: auto;}
     .right-action-buttons .edit-btn{cursor: pointer; pointer-events: auto; background-image: url("/img/edit.ico"); display: inline-block; width: 15px; height: 15px;background-size: cover;}
