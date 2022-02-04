@@ -180,7 +180,7 @@ template.innerHTML = `
         <label for="newitem-type">Type: </label>
         <field-edit id="newitem-type" type="select">
           <option value="item">Item</option>
-          <option value="sub">Sub list</option>
+          <option value="sub">New list</option>
           <option value="ref">Reference</option>
         </field-edit>
       </div>
