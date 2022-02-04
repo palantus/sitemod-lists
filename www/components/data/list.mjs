@@ -136,7 +136,7 @@ template.innerHTML = `
     .itemtext{width: 100%; display: inline-block;}
     .itemtextcontainer:focus-within .right-action-buttons{opacity: 1; pointer-events: auto;}
     .itemtextcontainer:hover .right-action-buttons{opacity: 1; pointer-events: auto;}
-    .right-action-buttons img{cursor: pointer; pointer-events: auto;}
+    .right-action-buttons .edit-btn{cursor: pointer; pointer-events: auto; background-image: url("/img/edit.ico"); display: inline-block; width: 15px; height: 15px;background-size: cover;}
   </style>
   <div id="container">
     <p id="title" title="Doubleclick to change"></p>
@@ -395,7 +395,7 @@ class Element extends HTMLElement {
             <td>
               <div class="itemtextcontainer">
                 <span class="itemtext" tabindex=0>${i.textHTML}</span>
-                <span class="right-action-buttons"><img class="edit-btn" src="/img/edit.ico" title="Edit"></span>
+                <span class="right-action-buttons"><span class="edit-btn" title="Edit"></span></span>
               </div>
             </td>
           </tr>
