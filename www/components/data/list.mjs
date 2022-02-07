@@ -20,7 +20,7 @@ template.innerHTML = `
     }
     .hidden{display: none;}
 
-    #title{
+    #title-main{
       font-size: 120%;
       margin-top: 0px;
       margin-bottom: 5px;
@@ -146,7 +146,7 @@ template.innerHTML = `
     }
   </style>
   <div id="container">
-    <p id="title" title="Doubleclick to change"></p>
+    <field-ref id="title-main"></field-ref>
     <div id="body">
       
     </div>
@@ -170,9 +170,8 @@ template.innerHTML = `
           <div>
             <div class="dropdown-heading">Actions</div>
             <div class="dropdown-links">
-              <button id="clearchecked" title="Delete checked items">Remove checked</button>
+              <button id="clearchecked" title="Delete checked items">Delete checked</button>
               <button id="delete" title="Delete list">Delete list</button>
-              <button id="share" title="Open shareable link" data-dropdown-button>Share</button>
             </div>
           </div>
           <div>
@@ -230,8 +229,6 @@ class Element extends HTMLElement {
     this.deleteChecked = this.deleteChecked.bind(this)
     this.change = this.change.bind(this)
     this.bodyClick = this.bodyClick.bind(this)
-    this.share = this.share.bind(this)
-    this.titleChange = this.titleChange.bind(this)
     this.refreshData = this.refreshData.bind(this)
 
     if (this.hasAttribute("noframe"))
@@ -245,8 +242,6 @@ class Element extends HTMLElement {
       this.shadowRoot.getElementById("clearchecked").addEventListener("click", this.deleteChecked)
       this.shadowRoot.getElementById("body").addEventListener("change", this.change)
       this.shadowRoot.getElementById("body").addEventListener("click", this.bodyClick)
-      this.shadowRoot.getElementById("share").addEventListener("click", this.share)
-      this.shadowRoot.getElementById("title").addEventListener("dblclick", this.titleChange)
       this.shadowRoot.getElementById("color").addEventListener("change", async (e) => {
         await api.patch(`lists/${this.listId}`, {color: e.target.value})
         this.refreshData()
@@ -360,13 +355,6 @@ class Element extends HTMLElement {
     await api.patch(`lists/${this.listId}/items/${itemId}`, { checked: e.target.checked })
   }
 
-  async titleChange() {
-    let title = await promptDialog("Enter new title", this.list.title)
-    if (!title) return;
-    await api.patch(`lists/${this.listId}`, { title })
-    this.refreshData();
-  }
-
   async bodyClick(e) {
     if (e.target.tagName == "A") {
       let href = e.target.getAttribute("href")
@@ -382,10 +370,6 @@ class Element extends HTMLElement {
         this.add(item)
       }
     }
-  }
-
-  share() {
-    goto(`/list/${this.listId}`)
   }
 
   async refreshData() {
@@ -404,7 +388,8 @@ class Element extends HTMLElement {
     if(this.list.color && !this.hasAttribute("noframe")){
       this.shadowRoot.getElementById("container").style.backgroundColor = this.list.color;
     }
-    this.shadowRoot.getElementById("title").innerText = this.list.title
+    this.shadowRoot.getElementById("title-main").innerText = this.list.title
+    this.shadowRoot.getElementById("title-main").setAttribute("ref", `/list/${listId}`)
     this.shadowRoot.getElementById("title-edit").value = this.list.title
     this.shadowRoot.getElementById("color").value = this.list.color||"#FFFFFF"
 
