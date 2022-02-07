@@ -144,6 +144,7 @@ template.innerHTML = `
       top: 5px;
       width: 140px;
     }
+    .item table td:first-child{vertical-align: top;}
   </style>
   <div id="container">
     <field-ref id="title-main"></field-ref>
