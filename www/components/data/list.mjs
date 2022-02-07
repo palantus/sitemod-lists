@@ -209,7 +209,6 @@ template.innerHTML = `
       </div>
     
       <br>
-      <br>
       
       <label for="newitem-text"">Text: </label><br>
       <textarea id="newitem-text" name="text" rows="8" wrap="soft"></textarea>
