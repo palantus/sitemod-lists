@@ -6,10 +6,10 @@ import "/components/action-bar-item.mjs"
 import "/components/field-ref.mjs"
 import "/components/field.mjs"
 import {on, off, fire} from "/system/events.mjs"
-import {state} from "/system/core.mjs"
+import {state, apiURL} from "/system/core.mjs"
 import {showDialog} from "/components/dialog.mjs"
 import "/components/data/list.mjs"
-import { promptDialog } from "../../components/dialog.mjs"
+import { promptDialog, confirmDialog } from "../../components/dialog.mjs"
 
 const template = document.createElement('template');
 template.innerHTML = `
@@ -40,6 +40,7 @@ template.innerHTML = `
   <action-bar>
       <action-bar-item id="new-btn">New list</action-bar-item>
       <action-bar-item id="refresh-btn">Refresh</action-bar-item>
+      <action-bar-item id="export-btn">Export</action-bar-item>
       <div id="filters">
         <input type="checkbox" id="show-all"></input>
         <label for="show-all">Show all</label>
@@ -75,9 +76,11 @@ class Element extends HTMLElement {
 
     this.refreshData = this.refreshData.bind(this);
     this.newList = this.newList.bind(this);
+    this.export = this.export.bind(this)
     
     this.shadowRoot.getElementById("new-btn").addEventListener("click", this.newList)
     this.shadowRoot.getElementById("refresh-btn").addEventListener("click", e => this.refreshData(e, true))
+    this.shadowRoot.getElementById("export-btn").addEventListener("click", this.export)
     this.shadowRoot.getElementById("lists").addEventListener("list-deleted", this.refreshData)
     this.shadowRoot.getElementById("lists").addEventListener("list-archived", this.refreshData)
     this.shadowRoot.getElementById("lists").addEventListener("list-added", this.refreshData)
@@ -151,6 +154,12 @@ class Element extends HTMLElement {
     if(!title) return;
     let list = await api.post("lists", {title})
     this.addListToView(this.shadowRoot.getElementById("lists"), list)
+  }
+
+  async export(){
+    if(!(await confirmDialog(`This will open a new window with a JSON file. Download that as a backup or save the URL if you need it to import into another instance.`))) return;
+    let {token} = await api.get("me/token")
+    window.open(`${apiURL()}/lists/export?token=${token}`)
   }
 
   connectedCallback() {

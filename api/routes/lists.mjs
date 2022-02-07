@@ -17,6 +17,12 @@ export default (app) => {
     res.json(lists.map(list => ({id: list._id, title: list.title})));
   });
 
+  route.get('/export', function (req, res, next) {
+    if(!validateAccess(req, res, {permission: "lists.read"})) return;
+    let lists = List.all(res.locals.user)
+    res.json(lists.map(list => list.toObjFull()));
+  });
+
   route.get('/:id', function (req, res, next) {
     if(!validateAccess(req, res, {permission: "lists.read"})) return;
     let list = List.lookup(sanitize(req.params.id))

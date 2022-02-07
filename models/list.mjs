@@ -42,4 +42,17 @@ export default class List extends Entity {
       keepSorted: typeof this.keepSorted === "boolean" ? this.keepSorted : false
     }
   }
+
+  toObjFull() {
+    
+    return {
+      id: this._id, 
+      title: this.title,
+      color: this.color||null,
+      items: this.rels.item?.map(i => ListItem.from(i).toObjFull()) || [],
+      subList: this.tags.includes("sublist"),
+      archived: this.tags.includes("archived"),
+      keepSorted: typeof this.keepSorted === "boolean" ? this.keepSorted : false
+    }
+  }
 }
