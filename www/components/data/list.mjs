@@ -128,7 +128,7 @@ template.innerHTML = `
     .dropdown-heading{
       margin-bottom: 5px;
     }
-    #newitem-text{width: 350px;}
+    #newitem-text{width: calc(100% - 10px);}
     #newitem-dialog label{width: 115px;display: inline-block;}
     #newitem-dialog field-edit{width: 235px;}
 
