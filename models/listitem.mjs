@@ -11,7 +11,7 @@ export default class ListItem extends Entity {
         if(!type) throw "Unknown data type for list ref"
         this.refType = ""+refType;
         this.refValue = ""+refValue;
-        this.text = text || null;
+        this.text = typeof text === "string" ? text.substring(0, 9999) : '' || null;
         break;
 
       default:

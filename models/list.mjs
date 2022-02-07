@@ -3,7 +3,7 @@ import ListItem from "./listitem.mjs";
 
 export default class List extends Entity {
   initNew(title, owner, {type} = {}) {
-    this.title = title || "New list";
+    this.title = typeof title === "string" ? title.substring(0, 9999) : '' || "New list";
 
     this.rel(owner, "owner")
     this.tag("list")
