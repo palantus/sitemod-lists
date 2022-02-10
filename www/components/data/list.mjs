@@ -3,7 +3,7 @@ let elementName = "data-list-component"
 import { confirmDialog, showDialog, alertDialog} from "../dialog.mjs";
 import { promptDialog } from "../dialog.mjs";
 import api from "/system/api.mjs"
-import { goto } from "/system/core.mjs"
+import { goto, setPageTitle } from "/system/core.mjs"
 import "/components/field-edit.mjs"
 import "/components/field-list.mjs"
 
@@ -376,6 +376,8 @@ class Element extends HTMLElement {
     let listId = this.listId = this.getAttribute("listid")
     if(!listId) return;
 
+    if(this.hasAttribute("setpagetitle")) setPageTitle("")
+
     try{
       this.list = await api.get(`lists/${listId}`)
     }catch(err){}
@@ -384,6 +386,8 @@ class Element extends HTMLElement {
       this.style.display = "none";
       return;
     }
+
+    if(this.hasAttribute("setpagetitle")) setPageTitle(this.list.title)
 
     if(this.list.color && !this.hasAttribute("noframe")){
       this.shadowRoot.getElementById("container").style.backgroundColor = this.list.color;
