@@ -5,11 +5,11 @@ import "/components/action-bar.mjs"
 import "/components/action-bar-item.mjs"
 import "/components/field-ref.mjs"
 import "/components/field.mjs"
-import {on, off, fire} from "/system/events.mjs"
-import {state, apiURL} from "/system/core.mjs"
-import {showDialog} from "/components/dialog.mjs"
+import {on, off} from "/system/events.mjs"
+import {apiURL} from "/system/core.mjs"
 import "/components/data/list.mjs"
 import { promptDialog, confirmDialog } from "../../components/dialog.mjs"
+import "/components/action-bar-menu.mjs"
 
 const template = document.createElement('template');
 template.innerHTML = `
@@ -30,7 +30,7 @@ template.innerHTML = `
       display: flex;
       flex-wrap: wrap;
     }
-    #filters{margin-left: 3px; padding-top: 1px; border-left: 1px solid lightgray; padding-left: 5px;}
+    #filters{margin-top: 5px;}
     #filters label{user-select: none;}
     div.lists-container{display: none; margin-top: 20px;}
     div.lists-container h2{margin-bottom: 0px; margin-left: 10px;}
@@ -40,11 +40,15 @@ template.innerHTML = `
   <action-bar>
       <action-bar-item id="new-btn">New list</action-bar-item>
       <action-bar-item id="refresh-btn">Refresh</action-bar-item>
-      <action-bar-item id="export-btn">Export</action-bar-item>
-      <div id="filters">
-        <input type="checkbox" id="show-all"></input>
-        <label for="show-all">Show all</label>
-      </div>
+      <action-bar-item id="options-menu" class="hidden">
+        <action-bar-menu label="Options">
+          <button id="export-btn">Export</button>
+          <div id="filters">
+            <input type="checkbox" id="show-all"></input>
+            <label for="show-all">Show all</label>
+          </div>
+        </action-bar-menu>
+      </action-bar-item>
   </action-bar>
 
   <div id="container">
@@ -164,7 +168,6 @@ class Element extends HTMLElement {
 
   connectedCallback() {
     on("changed-page", elementName, this.refreshData)
-    this.refreshData();
   }
 
   disconnectedCallback() {

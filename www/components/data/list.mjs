@@ -6,6 +6,7 @@ import api from "/system/api.mjs"
 import { goto, setPageTitle } from "/system/core.mjs"
 import "/components/field-edit.mjs"
 import "/components/field-list.mjs"
+import "/components/acl.mjs"
 
 const template = document.createElement('template');
 template.innerHTML = `
@@ -17,6 +18,7 @@ template.innerHTML = `
       box-shadow: 2px 2px 5px #777;
       background: rgba(255, 255, 255, 0.9);
       color: black;
+      min-width: 130px;
     }
     .hidden{display: none;}
 
@@ -41,6 +43,7 @@ template.innerHTML = `
       display: flex;
       align-items: baseline;
       gap: 5px;
+      position: relative;
     }
 
     .link {
@@ -82,7 +85,7 @@ template.innerHTML = `
       z-index: 2;
     }
     
-    .dropdown:focus-within > button + .dropdown-menu {
+    .dropdown:focus-within > #options + .dropdown-menu {
       opacity: 1;
       transform: translateY(0);
       pointer-events: auto;
@@ -145,21 +148,26 @@ template.innerHTML = `
       width: 140px;
     }
     .item table td:first-child{vertical-align: top;}
+
+    #add{cursor: pointer; pointer-events: auto; background-image: url("/img/plus.png"); display: inline-block; width: 17px; height: 17px;background-size: cover;margin-left: 4px;}
+    #options{cursor: pointer; pointer-events: auto; background-image: url("/img/threedots.png"); display: inline-block; width: 17px; height: 17px;background-size: cover;}
+    acl-component{margin-top: 5px;}
   </style>
   <div id="container">
     <field-ref id="title-main"></field-ref>
-    <div id="body">
-      
-    </div>
+    <div id="body"></div>
     <div id="bottombar">
-      <button class="styled" id="add" title="Add item">Add</button>
+      <div id="add" title="Add item"></div>
+      <!--<button class="styled" id="add" title="Add item">Add</button>-->
       <div class="dropdown" data-dropdown>
-        <button id="options" title="Options" data-dropdown-button>Options</button>
+        <div tabindex="0" id="options" title="Options"></div>
+        <!--<button id="options" title="Options" data-dropdown-button>Options</button>-->
         <div class="dropdown-menu information-grid">
           <div>
-            <div class="dropdown-heading">Title</div>
+            <div class="dropdown-heading">Title and access</div>
             <div class="dropdown-links">
               <input id="title-edit"></input>
+              <acl-component id="acl" rights="rw" type="list" disabled/>
             </div>
           </div>
           <div>
@@ -382,7 +390,7 @@ class Element extends HTMLElement {
       this.list = await api.get(`lists/${listId}`)
     }catch(err){}
     if (!this.list) {
-      alertDialog("This list doesn't exist").then(() => window.history.back())
+      alertDialog("This list doesn't exist or you do not have access to see it").then(() => window.history.back())
       this.style.display = "none";
       return;
     }
@@ -422,10 +430,20 @@ class Element extends HTMLElement {
       </div>`).join("")
 
     this.refreshView();
-    this.shadowRoot.querySelectorAll("#options-list field-edit").forEach(e => e.setAttribute("patch", `lists/${listId}`))
+    if(this.list.rights.includes("w")){
+      this.shadowRoot.querySelectorAll("#options-list field-edit").forEach(e => e.setAttribute("patch", `lists/${listId}`))
+      this.shadowRoot.getElementById("acl").setAttribute("entity-id", listId)
+      setTimeout(() => this.shadowRoot.getElementById("acl").removeAttribute("disabled"), 500)
+    }
   }
 
   refreshView(){
+    if(!this.list.rights.includes("w")){
+      this.shadowRoot.getElementById("bottombar").style.display = "none"
+      this.shadowRoot.querySelectorAll(".right-action-buttons").forEach(e => e.style.display = "none")
+      this.shadowRoot.querySelectorAll("input").forEach(e => e.setAttribute("disabled", "true"))
+      
+    }
     this.shadowRoot.getElementById("archived").setAttribute("value", this.list.archived ? true : false)
     this.shadowRoot.getElementById("subList").setAttribute("value", this.list.subList ? true : false)
     this.shadowRoot.getElementById("keepSorted").setAttribute("value", this.list.keepSorted ? true : false)

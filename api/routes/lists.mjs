@@ -14,32 +14,34 @@ export default (app) => {
   route.get('/main', function (req, res, next) {
     if(!validateAccess(req, res, {permission: "lists.read"})) return;
     let lists = List.allMain(res.locals.user)
-    res.json(lists.map(list => ({id: list._id, title: list.title})));
+    res.json(lists.map(list => ({id: list._id, title: list.title, rights: list.rights(res.locals.user)})));
   });
 
   route.get('/export', function (req, res, next) {
     if(!validateAccess(req, res, {permission: "lists.read"})) return;
     let lists = List.all(res.locals.user)
-    res.json(lists.map(list => list.toObjFull()));
+    res.json(lists.map(list => list.toObjFull(res.locals.user)));
   });
 
   route.get('/:id', function (req, res, next) {
     if(!validateAccess(req, res, {permission: "lists.read"})) return;
     let list = List.lookup(sanitize(req.params.id))
     if(!list) { res.sendStatus(404); return; }
-    res.json(list.toObj());
+    if(!list.validateAccess(res, 'r')) return;
+    res.json(list.toObj(res.locals.user));
   });
 
   route.post('/', function (req, res, next) {
     if(!validateAccess(req, res, {permission: "lists.edit"})) return;
     let list = new List(req.body.title, res.locals.user)
-    res.json(list.toObj());
+    res.json(list.toObj(res.locals.user));
   });
 
   route.delete('/:id', function (req, res, next) {
     if(!validateAccess(req, res, {permission: "lists.edit"})) return;
     let list = List.lookup(sanitize(req.params.id))
     if(!list) { res.sendStatus(404); return; }
+    if(!list.validateAccess(res, 'w')) return;
     list.delete();
     res.json(true);
   });
@@ -48,6 +50,7 @@ export default (app) => {
     if(!validateAccess(req, res, {permission: "lists.edit"})) return;
     let list = List.lookup(sanitize(req.params.id))
     if(!list) { res.sendStatus(404); return; }
+    if(!list.validateAccess(res, 'w')) return;
     
     if(req.body.title !== undefined) list.title = req.body.title;
     if(req.body.color !== undefined) list.color = req.body.color;
@@ -55,13 +58,14 @@ export default (app) => {
     if(req.body.keepSorted !== undefined) list.keepSorted = !!req.body.keepSorted;
     if(req.body.subList !== undefined) {if(req.body.subList) list.tag("sublist");  else list.removeTag("sublist");}
 
-    res.json(list.toObj());
+    res.json(list.toObj(res.locals.user));
   });
 
   route.post('/:id/items', function (req, res, next) {
     if(!validateAccess(req, res, {permission: "lists.edit"})) return;
     let list = List.lookup(sanitize(req.params.id))
     if(!list) { res.sendStatus(404); return; }
+    if(!list.validateAccess(res, 'w')) return;
     if(req.body.type == "ref" && (!req.body.refType || !req.body.refValue)) throw "Missing refType or refValue for reference"
     let item;
     if(req.body.type == "sub"){
@@ -79,6 +83,7 @@ export default (app) => {
     if(!validateAccess(req, res, {permission: "lists.edit"})) return;
     let list = List.lookup(sanitize(req.params.id))
     if(!list) { res.sendStatus(404); return; }
+    if(!list.validateAccess(res, 'w')) return;
     list.rels.item?.forEach(i => {
       if(i.tags.includes("checked")) i.delete();
     })
@@ -89,6 +94,7 @@ export default (app) => {
     if(!validateAccess(req, res, {permission: "lists.edit"})) return;
     let list = List.lookup(sanitize(req.params.id))
     if(!list) { res.sendStatus(404); return; }
+    if(!list.validateAccess(res, 'w')) return;
     let item = ListItem.lookup(sanitize(req.params.item))
     if(!item) { res.sendStatus(404); return; }
     
@@ -113,6 +119,7 @@ export default (app) => {
     if(!validateAccess(req, res, {permission: "lists.edit"})) return;
     let list = List.lookup(sanitize(req.params.id))
     if(!list) { res.sendStatus(404); return; }
+    if(!list.validateAccess(res, 'r')) return;
     let item = ListItem.lookup(sanitize(req.params.item))
     if(!item) { res.sendStatus(404); return; }
     res.json(item.toObjFull());
@@ -120,6 +127,9 @@ export default (app) => {
   
   route.delete('/:id/items/:item', function (req, res, next) {
     if(!validateAccess(req, res, {permission: "lists.edit"})) return;
+    let list = List.lookup(sanitize(req.params.id))
+    if(!list) { res.sendStatus(404); return; }
+    if(!list.validateAccess(res, 'w')) return;
     let item = ListItem.lookup(sanitize(req.params.item))
     if(!item) { res.sendStatus(404); return; }
     item.delete();

@@ -1,5 +1,7 @@
 import Entity from "entitystorage"
 import ListItem from "./listitem.mjs";
+import ACL from "../../../models/acl.mjs"
+import DataType from "../../../models/datatype.mjs";
 
 export default class List extends Entity {
   initNew(title, owner, {type} = {}) {
@@ -10,6 +12,8 @@ export default class List extends Entity {
 
     if(type == "sub")
       this.tag("sublist")
+
+    ACL.setDefaultACLOnEntity(this, owner, DataType.lookup("list"))
   }
 
   static lookup(id) {
@@ -18,11 +22,13 @@ export default class List extends Entity {
   }
 
   static all(user){
-    return List.search(`tag:list owner.id:${user}`)
+    let type = DataType.lookup("list")
+    return List.search(`tag:list`).filter(l => new ACL(l, type).hasAccess(user, 'r'))
   }
 
   static allMain(user){
-    return List.search(`tag:list owner.id:${user} !tag:sublist !tag:archived`)
+    let type = DataType.lookup("list")
+    return List.search(`tag:list !tag:sublist !tag:archived`).filter(l => new ACL(l, type).hasAccess(user, 'r'))
   }
 
   delete(){
@@ -31,7 +37,20 @@ export default class List extends Entity {
     super.delete()
   }
 
-  toObj() {
+  hasAccess(user, right = 'r'){
+    return new ACL(this, DataType.lookup("list")).hasAccess(user, right)
+  }
+
+  validateAccess(res, right, respondIfFalse = true){
+    return new ACL(this, DataType.lookup("list")).validateAccess(res, right, respondIfFalse)
+  }
+
+  rights(user){
+    let acl = new ACL(this, DataType.lookup("list"))
+    return "" + (acl.hasAccess(user, "r")?'r':'') + (acl.hasAccess(user, "w")?'w':'')
+  }
+
+  toObj(user) {
     return {
       id: this._id, 
       title: this.title,
@@ -39,11 +58,12 @@ export default class List extends Entity {
       items: this.rels.item?.map(i => ListItem.from(i).toObj()) || [],
       subList: this.tags.includes("sublist"),
       archived: this.tags.includes("archived"),
-      keepSorted: typeof this.keepSorted === "boolean" ? this.keepSorted : false
+      keepSorted: typeof this.keepSorted === "boolean" ? this.keepSorted : false,
+      rights: this.rights(user)
     }
   }
 
-  toObjFull() {
+  toObjFull(user) {
     
     return {
       id: this._id, 
@@ -52,7 +72,8 @@ export default class List extends Entity {
       items: this.rels.item?.map(i => ListItem.from(i).toObjFull()) || [],
       subList: this.tags.includes("sublist"),
       archived: this.tags.includes("archived"),
-      keepSorted: typeof this.keepSorted === "boolean" ? this.keepSorted : false
+      keepSorted: typeof this.keepSorted === "boolean" ? this.keepSorted : false,
+      rights: this.rights(user)
     }
   }
 }
