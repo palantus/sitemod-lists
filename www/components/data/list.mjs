@@ -179,7 +179,7 @@ template.innerHTML = `
           <div>
             <div class="dropdown-heading">Actions</div>
             <div class="dropdown-links">
-              <button id="clearchecked" title="Clear checked items">Delete checked</button>
+              <button id="clearchecked" title="Clear checked items">Clear checked</button>
               <button id="delete" title="Delete list">Delete list</button>
             </div>
           </div>
