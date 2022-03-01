@@ -7,7 +7,6 @@ export default class List extends Entity {
   initNew(title, owner, {type} = {}) {
     this.title = typeof title === "string" ? title.substring(0, 9999) : '' || "New list";
 
-    this.rel(owner, "owner")
     this.tag("list")
 
     if(type == "sub")
