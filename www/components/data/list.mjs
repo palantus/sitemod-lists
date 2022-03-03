@@ -1,12 +1,13 @@
 let elementName = "data-list-component"
 
 import { confirmDialog, showDialog, alertDialog} from "../dialog.mjs";
-import { promptDialog } from "../dialog.mjs";
 import api from "/system/api.mjs"
 import { goto, setPageTitle } from "/system/core.mjs"
 import "/components/field-edit.mjs"
 import "/components/field-list.mjs"
 import "/components/acl.mjs"
+import {fireSelfSync, onMessage, offMessage} from "/system/message.mjs"
+import {uuidv4} from "/libs/uuid.mjs"
 
 const template = document.createElement('template');
 template.innerHTML = `
@@ -295,6 +296,7 @@ class Element extends HTMLElement {
         this.refreshView();
       })
     }
+    this.elementId = `${elementName}-${uuidv4()}`;
   }
 
   async add(item) {
@@ -326,6 +328,8 @@ class Element extends HTMLElement {
         this.refreshData()
         if(val.type == "sub")
           this.dispatchEvent(new CustomEvent("list-added", { bubbles: true, cancelable: false, detail: { listId: this.listId } }));
+
+        fireSelfSync("list-edit", {id: this.listId})
       },
       validate: ({type, text, refType, refValue}) => 
           !text && type == "item" ? "Please fill out text"
@@ -354,6 +358,7 @@ class Element extends HTMLElement {
   async deleteChecked() {
     await api.post(`lists/${this.listId}/deletechecked`)
     this.refreshData()
+    fireSelfSync("list-edit", {id: this.listId})
   }
 
   async change(e) {
@@ -361,6 +366,7 @@ class Element extends HTMLElement {
     let itemId = e.target.closest(".item").getAttribute("data-itemid")
 
     await api.patch(`lists/${this.listId}/items/${itemId}`, { checked: e.target.checked })
+    fireSelfSync("list-edit", {id: this.listId})
   }
 
   async bodyClick(e) {
@@ -386,6 +392,7 @@ class Element extends HTMLElement {
 
     if(this.hasAttribute("setpagetitle")) setPageTitle("")
 
+    let oldList = this.list;
     try{
       this.list = await api.get(`lists/${listId}`)
     }catch(err){}
@@ -394,6 +401,8 @@ class Element extends HTMLElement {
       this.style.display = "none";
       return;
     }
+
+    if(oldList && JSON.stringify(oldList) == JSON.stringify(this.list)) return;
 
     if(this.hasAttribute("setpagetitle")) setPageTitle(this.list.title)
 
@@ -430,7 +439,7 @@ class Element extends HTMLElement {
       </div>`).join("")
 
     this.refreshView();
-    if(this.list.rights.includes("w")){
+    if(this.list.rights.includes("w") && this.shadowRoot.getElementById("acl").getAttribute("entity-id") != listId){
       this.shadowRoot.querySelectorAll("#options-list field-edit").forEach(e => e.setAttribute("patch", `lists/${listId}`))
       this.shadowRoot.getElementById("acl").setAttribute("entity-id", listId)
       setTimeout(() => this.shadowRoot.getElementById("acl").removeAttribute("disabled"), 500)
@@ -463,9 +472,11 @@ class Element extends HTMLElement {
 
 
   connectedCallback() {
+    onMessage("list-edit", this.elementId, this.refreshData)
   }
 
   disconnectedCallback() {
+    offMessage("list-edit", this.elementId)
   }
 }
 

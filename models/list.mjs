@@ -44,12 +44,12 @@ export default class List extends Entity {
     return new ACL(this, DataType.lookup("list")).validateAccess(res, right, respondIfFalse)
   }
 
-  rights(user){
+  rights(user, shareKey){
     let acl = new ACL(this, DataType.lookup("list"))
-    return "" + (acl.hasAccess(user, "r")?'r':'') + (acl.hasAccess(user, "w")?'w':'')
+    return "" + (acl.hasAccess(user, "r", shareKey)?'r':'') + (acl.hasAccess(user, "w", shareKey)?'w':'')
   }
 
-  toObj(user) {
+  toObj(user, shareKey) {
     return {
       id: this._id, 
       title: this.title,
@@ -58,11 +58,11 @@ export default class List extends Entity {
       subList: this.tags.includes("sublist"),
       archived: this.tags.includes("archived"),
       keepSorted: typeof this.keepSorted === "boolean" ? this.keepSorted : false,
-      rights: this.rights(user)
+      rights: this.rights(user, shareKey)
     }
   }
 
-  toObjFull(user) {
+  toObjFull(user, shareKey) {
     
     return {
       id: this._id, 
@@ -72,7 +72,7 @@ export default class List extends Entity {
       subList: this.tags.includes("sublist"),
       archived: this.tags.includes("archived"),
       keepSorted: typeof this.keepSorted === "boolean" ? this.keepSorted : false,
-      rights: this.rights(user)
+      rights: this.rights(user, shareKey)
     }
   }
 }

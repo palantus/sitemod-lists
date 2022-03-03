@@ -20,7 +20,7 @@ export default (app) => {
   route.get('/export', function (req, res, next) {
     if(!validateAccess(req, res, {permission: "lists.read"})) return;
     let lists = List.all(res.locals.user)
-    res.json(lists.map(list => list.toObjFull(res.locals.user)));
+    res.json(lists.map(list => list.toObjFull(res.locals.user, res.locals.shareKey)));
   });
 
   route.get('/:id', function (req, res, next) {
@@ -28,13 +28,13 @@ export default (app) => {
     let list = List.lookup(sanitize(req.params.id))
     if(!list) { res.sendStatus(404); return; }
     if(!list.validateAccess(res, 'r')) return;
-    res.json(list.toObj(res.locals.user));
+    res.json(list.toObj(res.locals.user, res.locals.shareKey));
   });
 
   route.post('/', function (req, res, next) {
     if(!validateAccess(req, res, {permission: "lists.edit"})) return;
     let list = new List(req.body.title, res.locals.user)
-    res.json(list.toObj(res.locals.user));
+    res.json(list.toObj(res.locals.user, res.locals.shareKey));
   });
 
   route.delete('/:id', function (req, res, next) {
@@ -58,7 +58,7 @@ export default (app) => {
     if(req.body.keepSorted !== undefined) list.keepSorted = !!req.body.keepSorted;
     if(req.body.subList !== undefined) {if(req.body.subList) list.tag("sublist");  else list.removeTag("sublist");}
 
-    res.json(list.toObj(res.locals.user));
+    res.json(list.toObj(res.locals.user, res.locals.shareKey));
   });
 
   route.post('/:id/items', function (req, res, next) {

@@ -2,6 +2,8 @@ const elementName = 'list-page'
 
 import {state} from "/system/core.mjs"
 import "/components/data/list.mjs"
+import {uuidv4} from "/libs/uuid.mjs"
+import {on, off} from "/system/events.mjs"
 
 const template = document.createElement('template');
 template.innerHTML = `
@@ -24,19 +26,28 @@ class Element extends HTMLElement {
     this.attachShadow({ mode: 'open' });
     this.shadowRoot.appendChild(template.content.cloneNode(true));
 
+    this.refreshData = this.refreshData.bind(this)
+
     this.listId = /(\d+)/.exec(state().path)[0]
+    this.elementId = `${elementName}-${uuidv4()}`;
     this.refreshData()
   }
 
   refreshData(){
-    this.shadowRoot.getElementById("list").setAttribute("listid", this.listId)
+    if(this.shadowRoot.getElementById("list").getAttribute("listid") != this.listId)
+      this.shadowRoot.getElementById("list").setAttribute("listid", this.listId)
+    else
+      this.shadowRoot.getElementById("list").refreshData()
   }
 
   connectedCallback() {
-    this.refreshData()
+    on("changed-page", this.elementId, this.refreshData)
+    this.interval = setInterval(this.refreshData, 5000)
   }
 
   disconnectedCallback() {
+    off("changed-page", this.elementId)
+    clearInterval(this.interval)
   }
 
 }
