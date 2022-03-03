@@ -2,7 +2,7 @@ import express from "express"
 const { Router, Request, Response } = express;
 const route = Router();
 import {sanitize} from "entitystorage";
-import {validateAccess} from "../../../../services/auth.mjs"
+import {validateAccess, noGuest} from "../../../../services/auth.mjs"
 import List from "../../models/list.mjs";
 import ListItem from "../../models/listitem.mjs";
 
@@ -31,13 +31,13 @@ export default (app) => {
     res.json(list.toObj(res.locals.user, res.locals.shareKey));
   });
 
-  route.post('/', function (req, res, next) {
+  route.post('/', noGuest, function (req, res, next) {
     if(!validateAccess(req, res, {permission: "lists.edit"})) return;
     let list = new List(req.body.title, res.locals.user)
     res.json(list.toObj(res.locals.user, res.locals.shareKey));
   });
 
-  route.delete('/:id', function (req, res, next) {
+  route.delete('/:id', noGuest, function (req, res, next) {
     if(!validateAccess(req, res, {permission: "lists.edit"})) return;
     let list = List.lookup(sanitize(req.params.id))
     if(!list) { res.sendStatus(404); return; }
@@ -46,11 +46,11 @@ export default (app) => {
     res.json(true);
   });
 
-  route.patch('/:id', function (req, res, next) {
+  route.patch('/:id', noGuest, function (req, res, next) {
     if(!validateAccess(req, res, {permission: "lists.edit"})) return;
     let list = List.lookup(sanitize(req.params.id))
     if(!list) { res.sendStatus(404); return; }
-    if(!list.validateAccess(res, 'w')) return;
+    if(list.related.owner?._id != res.locals.user._id) return res.status(403).json({ error: `Only owner can do this` });
     
     if(req.body.title !== undefined) list.title = req.body.title;
     if(req.body.color !== undefined) list.color = req.body.color;
