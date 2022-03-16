@@ -1,4 +1,4 @@
-import Entity from "entitystorage"
+import Entity, {query} from "entitystorage"
 import ListItem from "./listitem.mjs";
 import ACL from "../../../models/acl.mjs"
 import DataType from "../../../models/datatype.mjs";
@@ -17,17 +17,17 @@ export default class List extends Entity {
 
   static lookup(id) {
     if(!id) return null;
-    return List.find(`id:"${id}" tag:list`)
+    return query.type(List).id(id).tag("list").first
   }
 
   static all(user){
     let type = DataType.lookup("list")
-    return List.search(`tag:list`).filter(l => new ACL(l, type).hasAccess(user, 'r'))
+    return query.type(List).tag("list").all.filter(l => new ACL(l, type).hasAccess(user, 'r'))
   }
 
   static allMain(user){
     let type = DataType.lookup("list")
-    return List.search(`tag:list !tag:sublist !tag:archived`).filter(l => new ACL(l, type).hasAccess(user, 'r'))
+    return query.type(List).tag("list").not(query.tag("sublist").or(query.tag("archived"))).all.filter(l => new ACL(l, type).hasAccess(user, 'r'))
   }
 
   delete(){

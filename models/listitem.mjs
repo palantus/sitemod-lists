@@ -1,4 +1,4 @@
-import Entity from "entitystorage"
+import Entity, {query} from "entitystorage"
 import DataType from "../../../models/datatype.mjs"
 
 export default class ListItem extends Entity {
@@ -43,16 +43,16 @@ export default class ListItem extends Entity {
 
   static lookup(id) {
     if(!id) return null;
-    return ListItem.find(`id:"${id}" tag:listitem`)
+    return query.type(ListItem).id(id).tag("listitem").first
   }
 
   static allFromListRef(list) {
     if(!list) return [];
-    return ListItem.search(`tag:listitem prop:type=ref prop:refType=list prop:refValue=${list._id}`)
+    return query.type(ListItem).tag("listitem").prop("type", "ref").prop("refType", "list").prop("refValue", list._id).all
   }
 
   static all(){
-    return ListItem.search("tag:listitem")
+    return query.type(ListItem).tag("listitem").all
   }
 
   toObj() {
