@@ -56,7 +56,6 @@ export default class ListItem extends Entity {
   }
 
   moveBetween(id1, id2){
-    console.log(id1, id2)
     let item1 = ListItem.lookup(id1)
     let item2 = ListItem.lookup(id2)
     if(!item1 && !item2) return;
