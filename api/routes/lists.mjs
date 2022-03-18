@@ -107,6 +107,8 @@ export default (app) => {
     }
     if(req.body.refType !== undefined) item.refType = sanitize(req.body.refType)
     if(req.body.refValue !== undefined) item.refValue = sanitize(req.body.refValue)
+    if(typeof req.body.moveBefore === "number" || typeof req.body.moveAfter === "number") 
+      item.moveBetween(typeof req.body.moveAfter === "number" ? req.body.moveAfter : null, typeof req.body.moveBefore === "number" ? req.body.moveBefore : null)
 
     if(req.body.text !== undefined || req.body.refType !== undefined || req.body.refValue !== undefined){
       item.updateHTML();

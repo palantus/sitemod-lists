@@ -1,13 +1,13 @@
 let elementName = "data-list-component"
 
-import { confirmDialog, showDialog, alertDialog} from "../dialog.mjs";
+import { confirmDialog, showDialog, alertDialog } from "../dialog.mjs";
 import api from "/system/api.mjs"
 import { goto, setPageTitle } from "/system/core.mjs"
 import "/components/field-edit.mjs"
 import "/components/field-list.mjs"
 import "/components/acl.mjs"
-import {fireSelfSync, onMessage, offMessage} from "/system/message.mjs"
-import {uuidv4} from "/libs/uuid.mjs"
+import { fireSelfSync, onMessage, offMessage } from "/system/message.mjs"
+import { uuidv4 } from "/libs/uuid.mjs"
 
 const template = document.createElement('template');
 template.innerHTML = `
@@ -252,12 +252,12 @@ class Element extends HTMLElement {
       this.shadowRoot.getElementById("body").addEventListener("change", this.change)
       this.shadowRoot.getElementById("body").addEventListener("click", this.bodyClick)
       this.shadowRoot.getElementById("color").addEventListener("change", async (e) => {
-        await api.patch(`lists/${this.listId}`, {color: e.target.value})
+        await api.patch(`lists/${this.listId}`, { color: e.target.value })
         this.refreshData()
       })
       this.shadowRoot.getElementById("title-edit").addEventListener("change", async (e) => {
-        if(e.target.value == this.list.title) return;
-        await api.patch(`lists/${this.listId}`, {title: e.target.value})
+        if (e.target.value == this.list.title) return;
+        await api.patch(`lists/${this.listId}`, { title: e.target.value })
         this.refreshData()
       })
 
@@ -267,16 +267,16 @@ class Element extends HTMLElement {
         //this.shadowRoot.getElementById("newitem-text").classList.toggle("hidden", type != "item")
       })
 
-      this.shadowRoot.getElementById("newitem-ref-type").addEventListener("value-changed", async(evt) => {
+      this.shadowRoot.getElementById("newitem-ref-type").addEventListener("value-changed", async (evt) => {
         let typeName = evt.target.getValue()
-        let type = (await api.get(`system/datatypes`, {cache: true})).find(t => t.id == typeName)
+        let type = (await api.get(`system/datatypes`, { cache: true })).find(t => t.id == typeName)
         this.shadowRoot.getElementById("newitem-ref-value").setAttribute("type", type.api.exhaustiveList ? "select" : "text")
         this.shadowRoot.getElementById("newitem-ref-value").setAttribute("lookup", typeName)
         this.shadowRoot.getElementById("newitem-ref-value").setAttribute("value", "")
       })
 
       this.shadowRoot.getElementById("newitem-ref-value").addEventListener("value-changed", (evt) => {
-        if(this.shadowRoot.getElementById("newitem-text").value) return; //Don't override existing value
+        if (this.shadowRoot.getElementById("newitem-text").value) return; //Don't override existing value
         let value = evt.target.getValue()
         let valueTitle = evt.target.getValueTitle()
         this.shadowRoot.getElementById("newitem-text").value = (value != valueTitle ? valueTitle : "") || ""
@@ -296,6 +296,70 @@ class Element extends HTMLElement {
         this.refreshView();
       })
     }
+
+    this.shadowRoot.getElementById("body").addEventListener("mousedown", e => {
+      if (!e.target.classList.contains("draggable")) return;
+      if (this.list.keepSorted) return;
+
+      let getElementIndex = elem => {
+        let i = 0;
+        while ((elem = elem.previousElementSibling) != null) ++i;
+        return i;
+      }
+
+      let itemDiv = e.target.closest("div.item")
+      let si = getElementIndex(itemDiv)
+      let sy = e.pageY
+      let b = document.body
+      let drag;
+
+      b.classList.add("grabCursor")
+      b.style.userSelect = "none"
+      itemDiv.classList.add("grabbed");
+
+      let move = e => {
+        if (!drag && Math.abs(e.pageY - sy) < 10)
+          return;
+
+        drag = true;
+        this.shadowRoot.getElementById("body").querySelectorAll("div.item").forEach(sib => {
+          if (sib == itemDiv) return;
+          var s = sib
+          let i = getElementIndex(s)
+          let y = s.getBoundingClientRect().top;
+
+          if (i >= 0 && e.pageY >= y && e.pageY < y + s.getBoundingClientRect().height) {
+            if (i < getElementIndex(itemDiv))
+              this.shadowRoot.getElementById("body").insertBefore(s, itemDiv.nextElementSibling)
+            else
+              this.shadowRoot.getElementById("body").insertBefore(s, itemDiv);
+            return false;
+          }
+        });
+      };
+
+      let up = e => {
+        if (drag && si != getElementIndex(itemDiv)) {
+          drag = false;
+          let previousId = itemDiv.previousElementSibling?.getAttribute("data-itemid")
+          let nextId = itemDiv.nextElementSibling?.getAttribute("data-itemid")
+          let id = itemDiv.getAttribute("data-itemid")
+          if(!id || (!previousId && !nextId)) return;
+          api.patch(`lists/${this.listId}/items/${id}`, {moveBefore: parseInt(nextId), moveAfter: parseInt(previousId)})
+        }
+        document.removeEventListener("mousemove", move)
+        document.removeEventListener("mouseup", up);
+        b.classList.remove("grabCursor")
+        b.style.userSelect = "initial";
+        itemDiv.classList.remove("grabbed");
+        e.stopPropagation();
+        e.preventDefault()
+      }
+
+      document.addEventListener("mousemove", move)
+      document.addEventListener("mouseup", up)
+      e.stopPropagation();
+    })
     this.elementId = `${elementName}-${uuidv4()}`;
   }
 
@@ -303,8 +367,8 @@ class Element extends HTMLElement {
     let dialog = this.shadowRoot.querySelector("#newitem-dialog")
 
     this.shadowRoot.getElementById("newitem-ref-value").setValue(item?.refValue || "")
-    if(item && item.refType){
-      let type = (await api.get(`system/datatypes`, {cache: true})).find(t => t.id == item.refType)
+    if (item && item.refType) {
+      let type = (await api.get(`system/datatypes`, { cache: true })).find(t => t.id == item.refType)
       this.shadowRoot.getElementById("newitem-ref-value").setAttribute("type", type?.api.exhaustiveList ? "select" : "text")
       this.shadowRoot.getElementById("newitem-ref-value").setAttribute("lookup", type?.id)
       await this.shadowRoot.getElementById("newitem-ref-value").refreshLookups()
@@ -321,26 +385,28 @@ class Element extends HTMLElement {
     showDialog(dialog, {
       show: () => this.shadowRoot.querySelector("#newitem-text").focus(),
       ok: async (val) => {
-        if(item)
+        if (item)
           await api.patch(`lists/${this.listId}/items/${item.id}`, val)
         else
           await api.post(`lists/${this.listId}/items`, val)
         this.refreshData()
-        if(val.type == "sub")
+        if (val.type == "sub")
           this.dispatchEvent(new CustomEvent("list-added", { bubbles: true, cancelable: false, detail: { listId: this.listId } }));
 
-        fireSelfSync("list-edit", {id: this.listId})
+        fireSelfSync("list-edit", { id: this.listId })
       },
-      validate: ({type, text, refType, refValue}) => 
-          !text && type == "item" ? "Please fill out text"
-        : (!refType || !refValue) && type == "ref" ? "Please fill out reference info"
-        : true,
-      values: () => {return {
-        type: this.shadowRoot.getElementById("newitem-type").getValue(),
-        text: this.shadowRoot.getElementById("newitem-text").value.replace(/\n/g, ""),
-        refType: this.shadowRoot.getElementById("newitem-ref-type").getValue(),
-        refValue: this.shadowRoot.getElementById("newitem-ref-value").getValue(),
-      }},
+      validate: ({ type, text, refType, refValue }) =>
+        !text && type == "item" ? "Please fill out text"
+          : (!refType || !refValue) && type == "ref" ? "Please fill out reference info"
+            : true,
+      values: () => {
+        return {
+          type: this.shadowRoot.getElementById("newitem-type").getValue(),
+          text: this.shadowRoot.getElementById("newitem-text").value.replace(/\n/g, ""),
+          refType: this.shadowRoot.getElementById("newitem-ref-type").getValue(),
+          refValue: this.shadowRoot.getElementById("newitem-ref-value").getValue(),
+        }
+      },
       close: () => {
         this.shadowRoot.querySelectorAll("input,textarea").forEach(e => e.value = '')
       }
@@ -351,14 +417,14 @@ class Element extends HTMLElement {
     if (!await confirmDialog(`Are you sure that you want to delete the list: ${this.list.title}?`)) return;
     await api.del(`lists/${this.listId}`)
     this.dispatchEvent(new CustomEvent("list-deleted", { bubbles: true, cancelable: false, detail: { listId: this.listId } }));
-    if(this.hasAttribute("backondelete"))
+    if (this.hasAttribute("backondelete"))
       window.history.back();
   }
 
   async deleteChecked() {
     await api.post(`lists/${this.listId}/deletechecked`)
     this.refreshData()
-    fireSelfSync("list-edit", {id: this.listId})
+    fireSelfSync("list-edit", { id: this.listId })
   }
 
   async change(e) {
@@ -366,7 +432,7 @@ class Element extends HTMLElement {
     let itemId = e.target.closest(".item").getAttribute("data-itemid")
 
     await api.patch(`lists/${this.listId}/items/${itemId}`, { checked: e.target.checked })
-    fireSelfSync("list-edit", {id: this.listId})
+    fireSelfSync("list-edit", { id: this.listId })
   }
 
   async bodyClick(e) {
@@ -376,10 +442,10 @@ class Element extends HTMLElement {
         e.preventDefault();
         goto(href)
       }
-    } else if(e.target.classList.contains("edit-btn")){
+    } else if (e.target.classList.contains("edit-btn")) {
       let itemId = e.target.closest(".item").getAttribute("data-itemid")
       let itemBasic = this.list.items.find(i => i.id == itemId)
-      if(itemBasic){
+      if (itemBasic) {
         let item = await api.get(`lists/${this.listId}/items/${itemBasic.id}`)
         this.add(item)
       }
@@ -388,50 +454,52 @@ class Element extends HTMLElement {
 
   async refreshData() {
     let listId = this.listId = this.getAttribute("listid")
-    if(!listId) return;
+    if (!listId) return;
 
-    if(this.hasAttribute("setpagetitle")) setPageTitle("")
+    if (this.hasAttribute("setpagetitle")) setPageTitle("")
 
     let oldList = this.list;
-    try{
+    try {
       this.list = await api.get(`lists/${listId}`)
-    }catch(err){}
+    } catch (err) { }
     if (!this.list) {
       alertDialog("This list doesn't exist or you do not have access to see it").then(() => window.history.back())
       this.style.display = "none";
       return;
     }
 
-    if(oldList && JSON.stringify(oldList) == JSON.stringify(this.list)) return;
+    if (oldList && JSON.stringify(oldList) == JSON.stringify(this.list)) return;
 
-    if(this.hasAttribute("setpagetitle")) setPageTitle(this.list.title)
+    if (this.hasAttribute("setpagetitle")) setPageTitle(this.list.title)
 
-    if(this.list.color && !this.hasAttribute("noframe")){
+    if (this.list.color && !this.hasAttribute("noframe")) {
       this.shadowRoot.getElementById("container").style.backgroundColor = this.list.color;
     }
     this.shadowRoot.getElementById("title-main").innerText = this.list.title
     this.shadowRoot.getElementById("title-main").setAttribute("ref", `/list/${listId}`)
     this.shadowRoot.getElementById("title-edit").value = this.list.title
-    this.shadowRoot.getElementById("color").value = this.list.color||"#FFFFFF"
+    this.shadowRoot.getElementById("color").value = this.list.color || "#FFFFFF"
 
-    if(this.list.keepSorted){
-      for(let l of this.list.items){
-        l.textSortable = (l.textHTML?.replace(/(<([^>]+)>)/ig, '')||"").toLowerCase()
+    if (this.list.keepSorted) {
+      for (let l of this.list.items) {
+        l.textSortable = (l.textHTML?.replace(/(<([^>]+)>)/ig, '') || "").toLowerCase()
       }
       this.list.items = this.list.items.sort((a, b) => a.textSortable < b.textSortable ? -1 : 1)
+    } else {
+      this.list.items = this.list.items.sort((a, b) => a.orderIdx - b.orderIdx)
     }
 
     this.shadowRoot.getElementById("body").innerHTML = this.list.items.map(i => `
-      <div class="item" data-itemid="${i.id}">
+      <div class="item" data-itemid="${i.id}" >
         <table>
           <tr>
             <td>
-              <input type="checkbox" ${i.checked ? "checked" : ""} ${this.hasAttribute("noedit") ? "disabled" : ""}></input>
+              <input class="draggable" type="checkbox" ${i.checked ? "checked" : ""} ${this.hasAttribute("noedit") ? "disabled" : ""}></input>
             </td>
             <td>
               <div class="itemtextcontainer">
                 <span class="itemtext" tabindex=0>${i.textHTML}</span>
-                <span class="right-action-buttons"><span class="edit-btn" title="Edit"></span></span>
+                <span class="right-action-buttons"><span class="draggable edit-btn" title="Edit"></span></span>
               </div>
             </td>
           </tr>
@@ -439,19 +507,19 @@ class Element extends HTMLElement {
       </div>`).join("")
 
     this.refreshView();
-    if(this.list.rights.includes("w") && this.shadowRoot.getElementById("acl").getAttribute("entity-id") != listId){
+    if (this.list.rights.includes("w") && this.shadowRoot.getElementById("acl").getAttribute("entity-id") != listId) {
       this.shadowRoot.querySelectorAll("#options-list field-edit").forEach(e => e.setAttribute("patch", `lists/${listId}`))
       this.shadowRoot.getElementById("acl").setAttribute("entity-id", listId)
       setTimeout(() => this.shadowRoot.getElementById("acl").removeAttribute("disabled"), 500)
     }
   }
 
-  refreshView(){
-    if(!this.list.rights.includes("w")){
+  refreshView() {
+    if (!this.list.rights.includes("w")) {
       this.shadowRoot.getElementById("bottombar").style.display = "none"
       this.shadowRoot.querySelectorAll(".right-action-buttons").forEach(e => e.style.display = "none")
       this.shadowRoot.querySelectorAll("input").forEach(e => e.setAttribute("disabled", "true"))
-      
+
     }
     this.shadowRoot.getElementById("archived").setAttribute("value", this.list.archived ? true : false)
     this.shadowRoot.getElementById("subList").setAttribute("value", this.list.subList ? true : false)

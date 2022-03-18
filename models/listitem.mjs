@@ -55,11 +55,26 @@ export default class ListItem extends Entity {
     return query.type(ListItem).tag("listitem").all
   }
 
+  moveBetween(id1, id2){
+    console.log(id1, id2)
+    let item1 = ListItem.lookup(id1)
+    let item2 = ListItem.lookup(id2)
+    if(!item1 && !item2) return;
+    if(!item1)
+      this.orderIdx = item2.orderIdx - 50
+    else if(!item2)
+      this.orderIdx = item1.orderIdx + 50
+    else
+      this.orderIdx = item1.orderIdx + ((item2.orderIdx - item1.orderIdx) / 2)
+  }
+
+
   toObj() {
     return {
       id: this._id,
       textHTML: this.textHTML,
-      checked: this.tags.includes("checked")
+      checked: this.tags.includes("checked"),
+      orderIdx: this.orderIdx
     }
   }
 
@@ -70,7 +85,8 @@ export default class ListItem extends Entity {
       type: this.type,
       refType: this.refType,
       refValue: this.refValue,
-      text: this.text
+      text: this.text,
+      orderIdx: this.orderIdx
     }
   }
 }
