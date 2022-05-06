@@ -458,7 +458,7 @@ class Element extends HTMLElement {
     let listId = this.listId = this.getAttribute("listid")
     if (!listId) return;
 
-    if (this.hasAttribute("setpagetitle")) setPageTitle("")
+    if (this.hasAttribute("setpagetitle") && !this.list) setPageTitle("")
 
     let oldList = this.list;
     try {
