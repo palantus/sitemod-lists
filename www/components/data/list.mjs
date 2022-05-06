@@ -34,6 +34,8 @@ template.innerHTML = `
 
     div.item{
       /*white-space: nowrap;*/
+      padding-top: 1px;
+      padding-bottom: 1px;
     }
 
     .item table{border-collapse: collapse;width: 100%;}
