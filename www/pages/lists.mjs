@@ -110,7 +110,7 @@ class Element extends HTMLElement {
       this.shadowRoot.getElementById("graveyard").innerHTML = ""
     }
 
-    if(e?.originalTarget?.id != "show-all"){
+    if((e?.originalTarget || e?.target)?.id != "show-all"){
       let view = this.shadowRoot.getElementById("lists");
       this.setListsInView(view, this.lists.filter(l => !l.subList && !l.archived))
     }
