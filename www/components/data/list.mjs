@@ -74,8 +74,12 @@ template.innerHTML = `
       pointer-events: auto;
     }
 
-    .options{      
-      
+    .options span[slot="label"]{      
+      font-weight: bold;
+      margin-left: 5px;
+      right: 0px;
+      bottom: 0px;
+      position: absolute;
     }
     
     .information-grid {
