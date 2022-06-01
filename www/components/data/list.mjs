@@ -74,12 +74,15 @@ template.innerHTML = `
       pointer-events: auto;
     }
 
-    .options span[slot="label"]{      
-      font-weight: bold;
+    .options{      
       margin-left: 5px;
       right: 0px;
       bottom: 0px;
       position: absolute;
+    }
+    
+    .options span[slot="label"]{      
+      font-weight: bold;
     }
     
     .information-grid {
@@ -125,7 +128,7 @@ template.innerHTML = `
       <div id="add" title="Add item"></div>
       
       <dropdown-menu-component class="options" title="Options" width="300px">
-        <span slot="label">&vellip;</span>
+        <span slot="label" tabindex="0">&vellip;</span>
         <div slot="content" class="information-grid">
           <div>
             <div class="dropdown-heading">Title and access</div>
