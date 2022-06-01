@@ -74,12 +74,14 @@ template.innerHTML = `
       pointer-events: auto;
     }
 
+    /*
     #container:not(.noframe) .options{      
       margin-left: 5px;
       right: 0px;
       bottom: 0px;
       position: absolute;
     }
+    */
     
     .options span[slot="label"]{      
       font-weight: bold;
