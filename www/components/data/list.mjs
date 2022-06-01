@@ -8,6 +8,7 @@ import "/components/field-list.mjs"
 import "/components/acl.mjs"
 import { fireSelfSync, onMessage, offMessage } from "/system/message.mjs"
 import { uuidv4 } from "/libs/uuid.mjs"
+import "/components/dropdown-menu.mjs"
 
 const template = document.createElement('template');
 template.innerHTML = `
@@ -44,7 +45,6 @@ template.innerHTML = `
     #bottombar{
       margin-top: 5px;
       display: flex;
-      align-items: baseline;
       gap: 5px;
       position: relative;
     }
@@ -59,41 +59,6 @@ template.innerHTML = `
       cursor: pointer;
       padding: 0;
     }
-    
-    .dropdown:focus-within > .link,
-    .link:hover {
-      color: black;
-    }
-    
-    .dropdown {
-      position: relative;
-      display: inline-block;
-    }
-    
-    .dropdown-menu {
-      position: absolute;
-      left: 0;
-      top: calc(100% + .25rem);
-      background-color: white;
-      padding: .75rem;
-      border-radius: .25rem;
-      box-shadow: 0 2px 5px 0 rgba(0, 0, 0, .5);
-      opacity: 0;
-      pointer-events: none;
-      transform: translateY(-10px);
-      transition: opacity 150ms ease-in-out, transform 150ms ease-in-out;
-    }
-
-    .dropdown:focus-within{
-      z-index: 2;
-    }
-    
-    .dropdown:focus-within > #options + .dropdown-menu {
-      opacity: 1;
-      transform: translateY(0);
-      pointer-events: auto;
-    }
-
 
     .right-action-buttons{
       position: absolute;
@@ -108,6 +73,10 @@ template.innerHTML = `
       opacity: 1
       pointer-events: auto;
     }
+
+    .options{      
+      
+    }
     
     .information-grid {
       display: grid;
@@ -119,16 +88,6 @@ template.innerHTML = `
       display: flex;
       flex-direction: column;
       gap: .25rem;
-    }
-
-    img{
-      pointer-events: none;
-      width: 17px;
-      vertical-align: middle;
-      padding-bottom: 2px;
-    }
-    #options:hover{
-      filter: invert(10%);
     }
 
     .dropdown-heading{
@@ -153,19 +112,17 @@ template.innerHTML = `
     .item table td:first-child{vertical-align: top;}
 
     #add{cursor: pointer; pointer-events: auto; background-image: url("/img/plus.png"); display: inline-block; width: 17px; height: 17px;background-size: cover;margin-left: 4px;}
-    #options{cursor: pointer; pointer-events: auto; background-image: url("/img/threedots.png"); display: inline-block; width: 17px; height: 17px;background-size: cover;}
-    acl-component{margin-top: 5px;}
+    acl-component{margin-top: 5px; position: relative;}
   </style>
   <div id="container">
     <field-ref id="title-main"></field-ref>
     <div id="body"></div>
     <div id="bottombar">
       <div id="add" title="Add item"></div>
-      <!--<button class="styled" id="add" title="Add item">Add</button>-->
-      <div class="dropdown" data-dropdown>
-        <div tabindex="0" id="options" title="Options"></div>
-        <!--<button id="options" title="Options" data-dropdown-button>Options</button>-->
-        <div class="dropdown-menu information-grid">
+      
+      <dropdown-menu-component class="options" title="Options" width="300px">
+        <span slot="label">&vellip;</span>
+        <div slot="content" class="information-grid">
           <div>
             <div class="dropdown-heading">Title and access</div>
             <div class="dropdown-links">
