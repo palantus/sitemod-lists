@@ -45,7 +45,7 @@ template.innerHTML = `
     #bottombar{
       margin-top: 5px;
       display: flex;
-      gap: 5px;
+      gap: 10px;
       position: relative;
     }
 
@@ -108,7 +108,7 @@ template.innerHTML = `
 
     .itemtextcontainer{position: relative;}
     .itemtext{width: 100%; display: inline-block;}
-    .itemtext a{color: black; text-decoration: none;  font-weight: 550;}
+    .itemtext a{color: inherit !important; text-decoration: none;  font-weight: 550;}
     .itemtextcontainer:focus-within .right-action-buttons{opacity: 1; pointer-events: auto;}
     .itemtextcontainer:hover .right-action-buttons{opacity: 1; pointer-events: auto;}
     .right-action-buttons .edit-btn{cursor: pointer; pointer-events: auto; background-image: url("/img/edit.ico"); display: inline-block; width: 15px; height: 15px;background-size: cover;}
