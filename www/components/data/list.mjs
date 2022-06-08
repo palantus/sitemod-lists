@@ -61,14 +61,22 @@ template.innerHTML = `
     }
 
     .right-action-buttons{
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 150ms ease-in-out, transform 150ms ease-in-out;
+    }
+    
+    #container.noframe .right-action-buttons{
+      margin-left: 5px;
+    }
+
+    #container:not(.noframe) .right-action-buttons{
       position: absolute;
       left: calc(100% + .25rem);
       top: 0;
-      opacity: 0;
-      pointer-events: none;
       transform: translateX(-20px);
-      transition: opacity 150ms ease-in-out, transform 150ms ease-in-out;
     }
+
     .right-action-buttons:hover{
       opacity: 1
       pointer-events: auto;
@@ -107,11 +115,11 @@ template.innerHTML = `
     #newitem-dialog field-edit{width: 235px;}
 
     .itemtextcontainer{position: relative;}
-    .itemtext{width: 100%; display: inline-block;}
+    .itemtext{/*width: 100%; */display: inline-block;}
     .itemtext a{color: inherit !important; text-decoration: none;  font-weight: 550;}
     .itemtextcontainer:focus-within .right-action-buttons{opacity: 1; pointer-events: auto;}
     .itemtextcontainer:hover .right-action-buttons{opacity: 1; pointer-events: auto;}
-    .right-action-buttons .edit-btn{cursor: pointer; pointer-events: auto; background-image: url("/img/edit.ico"); display: inline-block; width: 15px; height: 15px;background-size: cover;}
+    .right-action-buttons .edit-btn{cursor: pointer; pointer-events: auto; display: inline-block; width: 15px; height: 15px;background-size: cover;}
 
     #options-list field-edit{
       position: relative;
@@ -286,6 +294,10 @@ class Element extends HTMLElement {
       itemDiv.classList.add("grabbed");
 
       let move = e => {
+        if(!itemDiv || itemDiv.parentElement != this.shadowRoot.getElementById("body")){
+          document.removeEventListener("mousemove", move)
+          document.removeEventListener("mouseup", up);
+        }
         if (!drag && Math.abs(e.pageY - sy) < 10)
           return;
 
@@ -436,7 +448,8 @@ class Element extends HTMLElement {
       return;
     }
 
-    if (oldList && JSON.stringify(oldList) == JSON.stringify(this.list)) return;
+    if (this.lastListJSON && this.lastListJSON == JSON.stringify(this.list)) return;
+    this.lastListJSON = JSON.stringify(this.list);
 
     if (this.hasAttribute("setpagetitle")) setPageTitle(this.list.title)
 
@@ -465,9 +478,9 @@ class Element extends HTMLElement {
               <input class="draggable" type="checkbox" ${i.checked ? "checked" : ""} ${this.hasAttribute("noedit") ? "disabled" : ""}></input>
             </td>
             <td>
-              <div class="itemtextcontainer">
-                <span class="itemtext" tabindex=0>${i.textHTML}</span>
-                <span class="right-action-buttons"><span class="draggable edit-btn" title="Edit"></span></span>
+              <div class="itemtextcontainer" tabindex=0>
+                <span class="itemtext">${i.textHTML}</span>
+                <span class="right-action-buttons"><span class="draggable edit-btn" title="Edit">&#9998;</span></span>
               </div>
             </td>
           </tr>
