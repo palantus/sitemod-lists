@@ -1,4 +1,4 @@
-import Entity, {query} from "entitystorage"
+import Entity, {query, nextNum} from "entitystorage"
 import DataType from "../../../models/datatype.mjs"
 
 export default class ListItem extends Entity {
@@ -18,7 +18,7 @@ export default class ListItem extends Entity {
         this.type = "item";
         this.text = text || "New item";
     }
-
+    this.orderIdx = nextNum() * 100;
     this.updateHTML()
 
     this.tag("listitem")
