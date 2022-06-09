@@ -13,7 +13,7 @@ export default async () => {
   query.tag("listitem").not(query.prop("orderIdx")).all.sort((a, b) => a._id - b._id).forEach(item => {
     item.orderIdx = nextNum() * 100;
   })
-  query.tag("listitem").prop("orderIdx", null).all.sort((a, b) => a._id - b._id).forEach(item => {
+  query.tag("listitem").all.filter(i => i.orderIdx === null).sort((a, b) => a._id - b._id).forEach(item => {
     item.orderIdx = nextNum() * 100;
   })
 
