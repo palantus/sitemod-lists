@@ -479,8 +479,7 @@ class Element extends HTMLElement {
             </td>
             <td>
               <div class="itemtextcontainer" tabindex=0>
-                <span class="itemtext">${i.textHTML}</span>
-                <span class="right-action-buttons"><span class="draggable edit-btn" title="Edit">&#9998;</span></span>
+                <span class="itemtext">${i.textHTML}<span class="right-action-buttons"><span class="draggable edit-btn" title="Edit">&#9998;</span></span></span>
               </div>
             </td>
           </tr>
