@@ -197,7 +197,7 @@ template.innerHTML = `
       <br>
       
       <label for="newitem-text"">Text: </label><br>
-      <textarea id="newitem-text" name="text" rows="8" wrap="soft"></textarea>
+      <textarea id="newitem-text" name="text" rows="8" wrap="soft" dialog-no-enter></textarea>
 
   </dialog-component>
 `;
