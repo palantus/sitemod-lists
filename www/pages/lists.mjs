@@ -7,7 +7,7 @@ import "/components/field-ref.mjs"
 import "/components/field.mjs"
 import "/components/action-bar-menu.mjs"
 import {on, off} from "/system/events.mjs"
-import {apiURL} from "/system/core.mjs"
+import {apiURL, goto} from "/system/core.mjs"
 import "/components/data/list.mjs"
 import { promptDialog, confirmDialog } from "../../components/dialog.mjs"
 
@@ -39,6 +39,7 @@ template.innerHTML = `
   <action-bar>
       <action-bar-item id="new-btn">New list</action-bar-item>
       <action-bar-item id="refresh-btn">Refresh</action-bar-item>
+      <action-bar-item id="goto-views-btn">Table view</action-bar-item>
       <action-bar-item id="options-menu" class="hidden">
         <action-bar-menu label="Options">
           <button id="export-btn">Export</button>
@@ -84,6 +85,7 @@ class Element extends HTMLElement {
     this.shadowRoot.getElementById("new-btn").addEventListener("click", this.newList)
     this.shadowRoot.getElementById("refresh-btn").addEventListener("click", e => this.refreshData(e, true))
     this.shadowRoot.getElementById("export-btn").addEventListener("click", this.export)
+    this.shadowRoot.getElementById("goto-views-btn").addEventListener("click", () => goto("/listviews"))
     this.shadowRoot.getElementById("lists").addEventListener("list-deleted", this.refreshData)
     this.shadowRoot.getElementById("lists").addEventListener("list-archived", this.refreshData)
     this.shadowRoot.getElementById("lists").addEventListener("list-added", this.refreshData)
