@@ -26,6 +26,7 @@ template.innerHTML = `
     #items-tab tr th{
       border-bottom: 1px solid gray;
     }
+    #items td{vertical-align: top;}
     #move{cursor:move;}
     action-bar label{
       border-left: 1px solid var(--contrast-color);
