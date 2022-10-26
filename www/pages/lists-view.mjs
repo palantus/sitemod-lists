@@ -33,6 +33,7 @@ template.innerHTML = `
       margin-left: 5px;
       padding-top: 3px;
     }
+    .hidden{display: none;}
   </style>  
 
   <action-bar>
