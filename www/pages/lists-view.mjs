@@ -27,6 +27,9 @@ template.innerHTML = `
       border-bottom: 1px solid gray;
     }
     #items td{vertical-align: top;}
+    @media (hover: none) and (pointer: coarse) {
+      #items td{padding-top: 3px; padding-bottom: 3px;}
+    }
     #move{cursor:move;}
     action-bar label{
       border-left: 1px solid var(--contrast-color);
