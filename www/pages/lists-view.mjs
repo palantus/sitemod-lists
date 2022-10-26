@@ -1,7 +1,7 @@
 const elementName = 'listview-page'
 
 import api from "/system/api.mjs"
-import {state} from "/system/core.mjs"
+import {state, isMobile} from "/system/core.mjs"
 import "/components/action-bar.mjs"
 import "/components/action-bar-item.mjs"
 import "/components/field-ref.mjs"
@@ -155,6 +155,7 @@ class Element extends HTMLElement {
   async refreshData(e, force){
     if(!this.viewId || isNaN(this.viewId)) return;
     let viewChecked = this.shadowRoot.getElementById("view-checked").checked
+    let isMobileView = isMobile()
 
     try{
       this.view = await api.get(`listview/${this.viewId}`)
@@ -173,12 +174,14 @@ class Element extends HTMLElement {
     this.shadowRoot.getElementById("items").innerHTML = this.items.filter(i => viewChecked || !i.checked)
                                                                   .map(item => `
         <tr class="item" data-itemid="${item.id}" data-listid="${item.listId}">
-          <td id="move" class="draggable">&#x2630;</td>
+          <td id="move" class="draggable ${isMobileView ? "hidden" : ""}">&#x2630;</td>
           <td><input type="checkbox" ${item.checked? "checked" : ""} class="selected-switch"></input></td>
           <td><field-ref ref="/list/${item.listId}">${item.listTitle}</field-ref></td>
           <td>${item.textHTML}</td>
         </tr>
       `).join("")
+
+    this.shadowRoot.getElementById("items-tab").querySelector("th:first-child").classList.toggle("hidden", isMobileView)
   }
 
   async chooseLists(){
