@@ -2,6 +2,7 @@ import Entity, {query} from "entitystorage"
 import ListItem from "./listitem.mjs";
 import ACL from "../../../models/acl.mjs"
 import DataType from "../../../models/datatype.mjs";
+import Share from "../../../models/share.mjs";
 
 export default class List extends Entity {
   initNew(title, owner, {type} = {}) {
@@ -33,6 +34,7 @@ export default class List extends Entity {
   delete(){
     this.rels.item?.forEach(i => i.delete())
     ListItem.allFromListRef(this).forEach(i => i.delete())
+    this.rels.share?.forEach(s => Share.from(s).delete())
     super.delete()
   }
 
