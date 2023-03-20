@@ -1,6 +1,6 @@
 export let menu = [
   {
-    title: "Lists",
+    title: "Me",
     items: [
       {title: "Lists", path: "/lists", permission: "lists.read"}
     ]
