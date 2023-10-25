@@ -1,9 +1,9 @@
 const elementName = 'list-page'
 
-import {state} from "/system/core.mjs"
-import "/components/data/list.mjs"
-import {uuidv4} from "/libs/uuid.mjs"
-import {on, off} from "/system/events.mjs"
+import {state} from "../system/core.mjs"
+import "../components/data/list.mjs"
+import {uuidv4} from "../libs/uuid.mjs"
+import {on, off} from "../system/events.mjs"
 
 const template = document.createElement('template');
 template.innerHTML = `

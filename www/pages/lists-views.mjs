@@ -1,14 +1,14 @@
 const elementName = 'listviews-page'
 
-import api from "/system/api.mjs"
-import "/components/action-bar.mjs"
-import "/components/action-bar-item.mjs"
-import "/components/field-ref.mjs"
-import "/components/field.mjs"
-import "/components/action-bar-menu.mjs"
-import {on, off} from "/system/events.mjs"
-import {apiURL} from "/system/core.mjs"
-import "/components/data/list.mjs"
+import api from "../system/api.mjs"
+import "../components/action-bar.mjs"
+import "../components/action-bar-item.mjs"
+import "../components/field-ref.mjs"
+import "../components/field.mjs"
+import "../components/action-bar-menu.mjs"
+import {on, off} from "../system/events.mjs"
+import {apiURL} from "../system/core.mjs"
+import "../components/data/list.mjs"
 import { promptDialog, confirmDialog } from "../../components/dialog.mjs"
 
 const template = document.createElement('template');

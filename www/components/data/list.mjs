@@ -1,14 +1,14 @@
 let elementName = "data-list-component"
 
 import { confirmDialog, showDialog, alertDialog } from "../dialog.mjs";
-import api from "/system/api.mjs"
-import { goto, setPageTitle } from "/system/core.mjs"
-import "/components/field-edit.mjs"
-import "/components/field-list.mjs"
-import "/components/acl.mjs"
-import { fireSelfSync, onMessage, offMessage } from "/system/message.mjs"
-import { uuidv4 } from "/libs/uuid.mjs"
-import "/components/dropdown-menu.mjs"
+import api from "../../system/api.mjs"
+import { goto, setPageTitle } from "../../system/core.mjs"
+import "../../components/field-edit.mjs"
+import "../../components/field-list.mjs"
+import "../../components/acl.mjs"
+import { fireSelfSync, onMessage, offMessage } from "../../system/message.mjs"
+import { uuidv4 } from "../../libs/uuid.mjs"
+import "../../components/dropdown-menu.mjs"
 
 const template = document.createElement('template');
 template.innerHTML = `
