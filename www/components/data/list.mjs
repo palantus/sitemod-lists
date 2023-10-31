@@ -2,7 +2,7 @@ let elementName = "data-list-component"
 
 import { confirmDialog, showDialog, alertDialog } from "../dialog.mjs";
 import api from "../../system/api.mjs"
-import { goto, setPageTitle } from "../../system/core.mjs"
+import { goto, setPageTitle, stylesheets } from "../../system/core.mjs"
 import "../../components/field-edit.mjs"
 import "../../components/field-list.mjs"
 import "../../components/acl.mjs"
@@ -12,7 +12,6 @@ import "../../components/dropdown-menu.mjs"
 
 const template = document.createElement('template');
 template.innerHTML = `
-  <link rel='stylesheet' href='/css/global.css'>
   <style>
     #container:not(.noframe){
       padding: 5px;
@@ -207,7 +206,8 @@ class Element extends HTMLElement {
   constructor() {
     super();
 
-    this.attachShadow({ mode: 'open' });
+    this.attachShadow({ mode: 'open' })
+        .adoptedStyleSheets = [stylesheets.global];
     this.shadowRoot.appendChild(template.content.cloneNode(true));
 
     this.add = this.add.bind(this)

@@ -7,13 +7,12 @@ import "../components/field-ref.mjs"
 import "../components/field.mjs"
 import "../components/action-bar-menu.mjs"
 import {on, off} from "../system/events.mjs"
-import {apiURL, goto} from "../system/core.mjs"
+import {apiURL, goto, stylesheets} from "../system/core.mjs"
 import "../components/data/list.mjs"
 import { promptDialog, confirmDialog } from "../../components/dialog.mjs"
 
 const template = document.createElement('template');
 template.innerHTML = `
-  <link rel='stylesheet' href='/css/global.css'>
   <style>
     #container{
         position: relative;
@@ -75,7 +74,8 @@ class Element extends HTMLElement {
   constructor() {
     super();
 
-    this.attachShadow({ mode: 'open' });
+    this.attachShadow({ mode: 'open' })
+        .adoptedStyleSheets = [stylesheets.global];
     this.shadowRoot.appendChild(template.content.cloneNode(true));
 
     this.refreshData = this.refreshData.bind(this);
