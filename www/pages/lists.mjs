@@ -9,7 +9,7 @@ import "../components/action-bar-menu.mjs"
 import {on, off} from "../system/events.mjs"
 import {apiURL, goto, stylesheets} from "../system/core.mjs"
 import "../components/data/list.mjs"
-import { promptDialog, confirmDialog } from "../../components/dialog.mjs"
+import { promptDialog, confirmDialog, showDialog } from "../../components/dialog.mjs"
 
 const template = document.createElement('template');
 template.innerHTML = `
@@ -39,9 +39,10 @@ template.innerHTML = `
       <action-bar-item id="new-btn">New list</action-bar-item>
       <action-bar-item id="refresh-btn">Refresh</action-bar-item>
       <action-bar-item id="goto-views-btn">Table view</action-bar-item>
-      <action-bar-item id="options-menu" class="hidden">
+      <action-bar-item id="options-menu">
         <action-bar-menu label="Options">
           <button id="export-btn">Export</button>
+          <button id="import-btn">Import</button>
           <div id="filters">
             <input type="checkbox" id="show-all"></input>
             <label for="show-all">Show all</label>
@@ -68,6 +69,22 @@ template.innerHTML = `
 
     <div id="graveyard"></div>
   </div>
+  
+  <dialog-component title="Import lists" id="import-dialog">
+    <select id="import-type">
+      <option value="json" selected>JSON file</option>
+      <option value="legacy">Legacy lists (lists.ahkpro.dk)</option>
+    </select>
+
+    <div id="fields-legacy" class="hidden">
+      <p>This will import lists from lists.ahkpro.dk</p>
+      <field-component label="Bucket id"><input id="import-bucket"></input></field-component>
+    </div>
+    <div id="fields-json">
+      <p>Paste a JSON backup into the following text field. This will import all lists in that file as new lists.</p>
+      <textarea id="import-json"></textarea>
+    </div>
+  </dialog-component>
 `;
 
 class Element extends HTMLElement {
@@ -81,11 +98,18 @@ class Element extends HTMLElement {
     this.refreshData = this.refreshData.bind(this);
     this.newList = this.newList.bind(this);
     this.export = this.export.bind(this)
+    this.import = this.import.bind(this)
     
     this.shadowRoot.getElementById("new-btn").addEventListener("click", this.newList)
     this.shadowRoot.getElementById("refresh-btn").addEventListener("click", e => this.refreshData(e, true))
     this.shadowRoot.getElementById("export-btn").addEventListener("click", this.export)
+    this.shadowRoot.getElementById("import-btn").addEventListener("click", this.import)
     this.shadowRoot.getElementById("goto-views-btn").addEventListener("click", () => goto("/listviews"))
+    this.shadowRoot.getElementById('import-type').addEventListener("change", () => {
+      let type = this.shadowRoot.getElementById("import-type").value
+      this.shadowRoot.getElementById("fields-legacy").classList.toggle("hidden", type != "legacy")
+      this.shadowRoot.getElementById("fields-json").classList.toggle("hidden", type != "json")
+    })
     this.shadowRoot.getElementById("lists").addEventListener("list-deleted", this.refreshData)
     this.shadowRoot.getElementById("lists").addEventListener("list-archived", this.refreshData)
     this.shadowRoot.getElementById("lists").addEventListener("list-added", this.refreshData)
@@ -165,6 +189,30 @@ class Element extends HTMLElement {
     if(!(await confirmDialog(`This will open a new window with a JSON file. Download that as a backup or save the URL if you need it to import into another instance.`))) return;
     let {token} = await api.get("me/token")
     window.open(`${apiURL()}/lists/export?token=${token}`)
+  }
+
+  import(){
+    let dialog = this.shadowRoot.getElementById("import-dialog")
+    
+    showDialog(dialog, {
+      show: () => this.shadowRoot.getElementById("import-bucket").focus(),
+      ok: async (val) => {
+        await api.post(`lists/import`, val)
+        this.refreshData()
+      },
+      validate: (val) => 
+          (val.type == "legacy" && !val.bucketId) ? "Please fill out bucket"
+        : (val.type == "json" && !val.json) ? "Please fill out JSON"
+        : true,
+      values: () => {return {
+        bucketId: this.shadowRoot.getElementById("import-bucket").value,
+        type: this.shadowRoot.getElementById("import-type").value,
+        json: this.shadowRoot.getElementById("import-json").value
+      }},
+      close: () => {
+        this.shadowRoot.querySelectorAll("field-component input").forEach(e => e.value = '')
+      }
+    })
   }
 
   connectedCallback() {
