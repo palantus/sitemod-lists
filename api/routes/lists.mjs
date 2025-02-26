@@ -90,6 +90,17 @@ export default (app) => {
     res.json(true)
   });
 
+  route.post('/:id/clearchecked', function(req, res, next) {
+    if (!validateAccess(req, res, { permission: "lists.edit" })) return;
+    let list = List.lookup(sanitize(req.params.id))
+    if (!list) { res.sendStatus(404); return; }
+    if (!list.validateAccess(res, 'w')) return;
+    list.rels.item?.forEach(i => {
+      if (i.tags.includes("checked")) i.removeTag("checked");
+    })
+    res.json(true)
+  });
+
   route.patch('/:id/items/:item', function(req, res, next) {
     if (!validateAccess(req, res, { permission: "lists.edit" })) return;
     let list = List.lookup(sanitize(req.params.id))

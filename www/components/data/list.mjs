@@ -157,6 +157,7 @@ template.innerHTML = `
             <div class="dropdown-heading">Actions</div>
             <div class="dropdown-links">
               <button id="clearchecked" title="Clear checked items">Clear checked</button>
+              <button id="deletechecked" title="Delete checked items">Delete checked</button>
               <button id="delete" title="Delete list">Delete list</button>
             </div>
           </div>
@@ -213,6 +214,7 @@ class Element extends HTMLElement {
     this.add = this.add.bind(this)
     this.delete = this.delete.bind(this)
     this.deleteChecked = this.deleteChecked.bind(this)
+    this.clearChecked = this.clearChecked.bind(this)
     this.change = this.change.bind(this)
     this.bodyClick = this.bodyClick.bind(this)
     this.refreshData = this.refreshData.bind(this)
@@ -225,7 +227,8 @@ class Element extends HTMLElement {
     } else {
       this.shadowRoot.getElementById("add").addEventListener("click", () => this.add())
       this.shadowRoot.getElementById("delete").addEventListener("click", this.delete)
-      this.shadowRoot.getElementById("clearchecked").addEventListener("click", this.deleteChecked)
+      this.shadowRoot.getElementById("deletechecked").addEventListener("click", this.deleteChecked)
+      this.shadowRoot.getElementById("clearchecked").addEventListener("click", this.clearChecked)
       this.shadowRoot.getElementById("body").addEventListener("change", this.change)
       this.shadowRoot.getElementById("body").addEventListener("click", this.bodyClick)
       this.shadowRoot.getElementById("color").addEventListener("change", async (e) => {
@@ -404,7 +407,13 @@ class Element extends HTMLElement {
 
   async deleteChecked() {
     await api.post(`lists/${this.listId}/deletechecked`)
-    this.refreshData()
+    this.refreshData(true)
+    fireSelfSync("list-edit", { id: this.listId })
+  }
+
+  async clearChecked() {
+    await api.post(`lists/${this.listId}/clearchecked`)
+    this.refreshData(true)
     fireSelfSync("list-edit", { id: this.listId })
   }
 
@@ -433,13 +442,12 @@ class Element extends HTMLElement {
     }
   }
 
-  async refreshData() {
+  async refreshData(force) {
     let listId = this.listId = this.getAttribute("listid")
     if (!listId) return;
 
     if (this.hasAttribute("setpagetitle") && !this.list) setPageTitle("")
 
-    let oldList = this.list;
     try {
       this.list = await api.get(`lists/${listId}`)
     } catch (err) { }
@@ -449,7 +457,7 @@ class Element extends HTMLElement {
       return;
     }
 
-    if (this.lastListJSON && this.lastListJSON == JSON.stringify(this.list)) return;
+    if (force !== true && this.lastListJSON && this.lastListJSON == JSON.stringify(this.list)) return;
     this.lastListJSON = JSON.stringify(this.list);
 
     if (this.hasAttribute("setpagetitle")) setPageTitle(this.list.title)
